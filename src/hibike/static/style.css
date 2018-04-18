@@ -1,9 +1,14 @@
-html,body{padding:0; margin:0;}
+html,body{
+  padding:0; 
+  margin:0;
+  width: 1800px;
+
+}
 
 /*------header-------*/
 .header {
   background-color: black;
-  height：300px;
+  width: 2000px;
   overflow: hidden;
 }
 
@@ -16,6 +21,7 @@ html,body{padding:0; margin:0;}
 .searchForm{
   height: 50px;
   background-color: #CC0033;
+  width: 2000px;
 }
 
 
@@ -95,19 +101,19 @@ html,body{padding:0; margin:0;}
 }
 .mapInformation {
   height: 700px;
-  width: 1300px;
-  margin-top: 50px;
-  margin-left: 150px; 
-  margin-bottom: 70px;
+  width: 1000px;
+  margin-top: 80px;
+  margin-left: 180px; 
+
 }
 #dublinmap {
-  height: 700px;
-  width: 1300px;
+  height: 500px;
+  width: 600px;
   float: left;
 }
 
 #detail {
-  height: 700px;
+  height: 500px;
   width: 300px;
   background-color: black;
   filter:alpha(opacity=50); /*支持IE */ 
@@ -115,4 +121,17 @@ html,body{padding:0; margin:0;}
   float: left;
   opacity:0.5;
 }
+
+/*--------curve chart----------*/
+#curve_chart {
+  width: 100px;
+  height: 50px;
+  margin-left: 600px;
+  background-color: yellow;
+}
+
+
+
+
+
 

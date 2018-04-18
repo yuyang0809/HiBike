@@ -1,8 +1,28 @@
 {% extends 'layout.html' %}
 
 {% block body %}
+    <form class="searchForm" autocomplete="off">
+      <div class="1">
+        <select class="searchSelection">
+            <option name="searchOption" value="Station Name">Station Name</option>
+            <option name="searchOption" value="Station Number">Station Number</option>
+            <option name="searchOption" value="Station Address">Station Address</option>
+            <option name="searchOption" value="Your address">Your Location</option>
+        </select> 
+      </div>  
+    </form>
+      <div class="2">
+        <div id="searchContent">
+          <input id="stationId" type="text" name="target" placeholder="Searching...">
+          <input id="searchSubmit" type="submit" value="Submit">
+        </div>
+        <div id="match"></div>
+      </div>
+    </form>
+<div class="mapInformation">
   <div id="dublinmap"></div>
-  <div id="curve_chart" style="width: 900px; height: 500px"></div>
+  <div id="curve_chart"></div>
+</div>
   <script async defer
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ&callback=initmymap">
   </script>
@@ -107,8 +127,8 @@
             title: 'Numbers'
           },
           lineWidth: 2,
-          width:800,
-          height:400,
+          width:500,
+          height:350,
           pointSize: 5,
           viewWindow: {min: 0, max: 'auto'},
           gridlines: { count: 3},

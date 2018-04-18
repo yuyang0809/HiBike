@@ -11,6 +11,7 @@ from info import *
 import requests
 from datetime import datetime
 import mysql.connector
+from distance import dis
 
 
 app = Flask(__name__)
@@ -33,7 +34,9 @@ stationData = cur.fetchall()
 
 @app.route('/', methods=['get'])
 def index():
-	return render_template('index.html', stationData=stationData)
+    cur.execute('select weather_main,temp from weather ORDER BY last_update DESC limit 0, 1')
+    weatherData = cur.fetchone()
+    return render_template('index.html', stationData=stationData,weatherData=weatherData)
 
 @app.route('/', methods=['post'])
 def communicate():
@@ -57,18 +60,21 @@ def communicate():
 		r0 = requests.get('https://maps.googleapis.com/maps/api/geocode/json?address={}&key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ'.format(address))
 		lat = r0.json()['results'][0]['geometry']['location']['lat']
 		lng = r0.json()['results'][0]['geometry']['location']['lng']
-		station_lat = stationData[0][3]
-		station_lng = stationData[0][4]
-		minDistance = (lat-station_lat)**2 + (lng-station_lng)**2
-		nearNum = stationData[0][0]
-		for i in range(1,len(stationData)):
-			station_lat = stationData[i][3]
-			station_lng = stationData[i][4]
-			current = (lat-station_lat)**2 + (lng-station_lng)**2
-			if(current < minDistance):
-				minDistance = current
-				nearNum = stationData[i][0]
-		return json.dumps({'station':nearNum})
+		if dis(lat,lng,53.344,-6.2668)<=10:
+			station_lat = stationData[0][3]
+			station_lng = stationData[0][4]
+			minDistance = (lat-station_lat)**2 + (lng-station_lng)**2
+			nearNum = stationData[0][0]
+			for i in range(1,len(stationData)):
+				station_lat = stationData[i][3]
+				station_lng = stationData[i][4]
+				current = (lat-station_lat)**2 + (lng-station_lng)**2
+				if(current < minDistance):
+					minDistance = current
+					nearNum = stationData[i][0]
+			return json.dumps({'station':nearNum})
+		else:
+			return json.dumps({'station':None})
 
 
 @app.route('/station/<stationNum>', methods=['get'])
