@@ -1,0 +1,269 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+    <form class="searchForm" autocomplete="off">
+      <div class="1">
+        <select class="searchSelection">
+            <option name="searchOption" value="Station Name">Station Name</option>
+            <option name="searchOption" value="Station Number">Station Number</option>
+            <option name="searchOption" value="Station Address">Station Address</option>
+            <option name="searchOption" value="Your address">Current Location</option>
+        </select> 
+      </div>  
+      
+      <div class="2">
+        <div id="searchContent">
+          <input id="stationId" type="text" name="target" placeholder="Searching...">
+          <input id="searchSubmit" type="submit" value="Submit">
+        </div>
+        <div id="match"></div>
+      </div>
+    </form>
+
+
+
+
+
+<div class="mapInformation">
+      <div id="dublinmap"></div>
+      <div id="detail">detailed information</div>
+</div>
+      <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ&libraries=places&callback=initmymap&initAutocomplete">
+      </script>
+<script>
+    stationData={{stationData|tojson|safe}}
+    
+    function initmymap(){
+    	// init map //
+    	var dbmap=new google.maps.LatLng(53.345842,-6.270120);
+      var map = new google.maps.Map(document.getElementById("dublinmap"),{
+        	center: dbmap,
+        	zoom:14,
+     	});
+
+     	var findLocationDiv = document.createElement('div');
+     	var FindLocation = new findLocation(findLocationDiv, map);
+		  findLocationDiv.index = 1;
+		  map.controls[google.maps.ControlPosition.TOP_CENTER].push(findLocationDiv);
+
+    	var infoWindow = new google.maps.InfoWindow;
+
+      // Create the autocomplete object, restricting the search to geographical
+      // location types.
+      autocomplete = new google.maps.places.Autocomplete(
+        /** @type {!HTMLInputElement} */
+        (document.getElementById('stationId')),
+        {types: ['geocode']});
+
+      // When the user selects an address from the dropdown, populate the address
+      // fields in the form.
+      autocomplete.addListener('place_changed', fillInAddress);
+
+      stationData.forEach(function(element) {
+
+        var station = new google.maps.LatLng(element[3], element[4]);
+        var marker = new google.maps.Marker({
+          position: station,
+          map: map
+        });
+
+        marker.addListener('click', function(){
+          data_to_backend = {'Id':'1','stationNum':element[0]};
+          $.post("{{url_for('communicate')}}", data_to_backend, function(data){
+            dynamicData=JSON.parse(data);
+            var infowincontent = document.createElement('div');
+            var strong = document.createElement('strong');
+            strong.textContent = 'Station Number : ' + element[0];
+            infowincontent.appendChild(strong);
+            infowincontent.appendChild(document.createElement('br'));
+
+            var text = document.createElement('text');
+            text.textContent = 'Station Name : ' + element[1];
+            infowincontent.appendChild(text);
+            infowincontent.appendChild(document.createElement('br'));
+
+            var text1 = document.createElement('text');
+            text1.textContent = 'available_bike_stands : ' + dynamicData['available_bike_stands'];
+            infowincontent.appendChild(text1);
+            infowincontent.appendChild(document.createElement('br'));
+
+            var text2 = document.createElement('text');
+            text2.textContent = 'available_bikes : ' + dynamicData['available_bikes'];
+            infowincontent.appendChild(text2);
+            infowincontent.appendChild(document.createElement('br'));
+
+            var detail = document.createElement('INPUT');
+            detail.setAttribute("type", "button");
+            detail.setAttribute("onclick", "showDetail("+element[0]+")");
+            detail.setAttribute("value", "More detail");
+            infowincontent.appendChild(detail)
+
+            infoWindow.setContent(infowincontent);
+            infoWindow.open(map, marker);
+          });
+        });
+      });
+    }
+
+    function showDetail(stationNum){
+    	data_to_backend = {'Id':'2','stationNum':stationNum};
+    	$.post("{{url_for('communicate')}}", data_to_backend, function(data){
+    		dynamicData=JSON.parse(data);
+  //{'last_update':data[0], 'banking':data[1], 'bonus':data[2], 'status':data[3], 'bike_stands':data[4], 'weather':data[5], 'temperature':data[6]}
+  			document.getElementById("detail").innerHTML = dynamicData['last_update'];
+ 			window.location.href = "#detail";
+    	});
+    }
+
+    function findLocation(findLocationDiv, map) {
+
+  		// Set CSS for the control border.
+    	var findLocation = document.createElement('div');
+    	findLocation.style.backgroundColor = '#fff';
+    	findLocation.style.border = '2px solid #fff';
+    	findLocation.style.borderRadius = '3px';
+    	findLocation.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
+    	findLocation.style.cursor = 'pointer';
+    	findLocation.style.marginBottom = '22px';
+    	findLocation.style.textAlign = 'center';
+    	findLocation.title = 'Click to recenter the map';
+    	findLocationDiv.appendChild(findLocation);
+
+    	// Set CSS for the control interior.
+    	var findLocationText = document.createElement('div');
+    	findLocationText.style.color = 'rgb(25,25,25)';
+    	findLocationText.style.fontFamily = 'Roboto,Arial,sans-serif';
+    	findLocationText.style.fontSize = '16px';
+    	findLocationText.style.lineHeight = '38px';
+    	findLocationText.style.paddingLeft = '5px';
+    	findLocationText.style.paddingRight = '5px';
+    	findLocationText.innerHTML = 'Center Map';
+    	findLocation.appendChild(findLocationText);
+
+		// Setup the click event listeners: simply set the map to Chicago.
+  		findLocation.addEventListener('click', function() {
+  			var infoWindow = new google.maps.InfoWindow({map: map});
+  			if (navigator.geolocation) {
+            		navigator.geolocation.getCurrentPosition(getSuccess, getError, {timeout:10000});
+            		function getSuccess(position){
+              		var pos = {
+                			lat: position.coords.latitude,
+                			lng: position.coords.longitude
+              		};
+
+              	infoWindow.setPosition(pos);
+              	infoWindow.setContent('Location found.');
+              	map.setCenter(pos);
+            		}
+            		function getError() {
+              		handleLocationError(true, infoWindow, map.getCenter());
+            		};
+         		}
+        else {
+            		handleLocationError(false, infoWindow, map.getCenter());
+        }
+  		});
+	  }
+	function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+        infoWindow.setPosition(pos);
+        infoWindow.setContent(browserHasGeolocation ?
+                              'Error: The Geolocation service failed.' :
+                              'Error: Your browser doesn\'t support geolocation.');
+    }
+
+    $("#stationId").bind("input propertychange",function(){
+      sub(0);
+    });
+
+    $("#searchForm").submit(function(evt){
+      evt.preventDefault();
+      sub(1);
+    });
+
+    function sub(n){
+      var content=$("#stationId").val();
+      var method=$("option[name=searchOption]:checked").val();
+      var stationList=[];
+      document.getElementById("match").innerHTML='';
+      if(n==1 && method=="Your address"){
+        data_to_backend = {'Id':'searchForm','address':content};
+        $.post("{{url_for('communicate')}}", data_to_backend, function(data){
+          data=JSON.parse(data);
+          window.location.href="/station/"+data['station'];
+        });
+      }else{
+        for(var i=0; i<stationData.length; i++){
+          switch (method) {
+            case "Station Name":
+              if(stationData[i][1].replace(/[ ]/g,"").toLowerCase().indexOf(content.replace(/[ ]/g,"").toLowerCase())>=0){
+                if(n==0){
+                  document.getElementById("match").innerHTML += "<a href='/station/"+stationData[i][0]+"'>"+stationData[i][1]+'</a><br>';
+                }else{
+                  stationList.push(stationData[i][0]);
+                  }
+                }
+              break;
+            case "Station Number":
+              if(n==0){
+                if(stationData[i][0].toString().replace(/[ ]/g,"").indexOf(content.toString().replace(/[ ]/g,""))>=0){
+                  document.getElementById("match").innerHTML += "<a href='/station/"+stationData[i][0]+"'>"+stationData[i][0]+'</a><br>';
+                }
+              } else{
+                var testlist = [parseInt(stationData[i][0]),]
+                if(testlist.includes(parseInt(content))){
+                  stationList.push(stationData[i][0]);
+                }
+              };
+              break;
+            case "Station Address":
+              if(stationData[i][2].toLowerCase().replace(/[ ]/g,"").indexOf(content.replace(/[ ]/g,"").toLowerCase())>=0){
+                if(n==0){
+                  document.getElementById("match").innerHTML += "<a href='/station/"+stationData[i][0]+"'>"+stationData[i][2]+'</a><br>';
+                }
+                else{
+                  stationList.push(stationData[i][0]);
+                }
+              };
+              break;
+          }
+        }
+        if (n==1){
+          if(stationList.length==1){
+            window.location.href="/station/"+stationList[0];
+          }else{
+            alert("Your station is not correct.")
+          }
+        }
+      }
+    }
+
+      
+    function fillInAddress() {
+      $("#searchForm").bind("input propertychange",function(){
+      var method=$("input[name=searchOption]:checked").val();
+      if( method=="Your address"){  
+          // Get the place details from the autocomplete object.
+          var place = autocomplete.getPlace();
+
+          for (var component in componentForm) {
+            document.getElementById(component).value = '';
+            document.getElementById(component).disabled = false;
+          }
+
+          // Get each component of the address from the place details
+          // and fill the corresponding field on the form.
+          for (var i = 0; i < place.address_components.length; i++) {
+            var addressType = place.address_components[i].types[0];
+            if (componentForm[addressType]) {
+              var val = place.address_components[i][componentForm[addressType]];
+              document.getElementById(addressType).value = val;
+            }
+          }
+        }
+      });
+    }
+
+  </script>
+{% endblock %}

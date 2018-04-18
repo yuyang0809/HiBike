@@ -1,0 +1,140 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1> Dublin </h1>
+  <div id="dublinmap"></div>
+  <div id="detail"></div>
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ&callback=initmymap">
+  </script>
+  <script>
+    function initmymap(){
+      // init map //
+      var dbmap=new google.maps.LatLng(53.3393,-6.267);
+        var map = new google.maps.Map(document.getElementById("dublinmap"),{
+          center: dbmap,
+          zoom:14,
+      });
+
+      var findLocationDiv = document.createElement('div');
+      var FindLocation = new findLocation(findLocationDiv, map);
+    findLocationDiv.index = 1;
+    map.controls[google.maps.ControlPosition.TOP_CENTER].push(findLocationDiv);
+
+      var infoWindow = new google.maps.InfoWindow;
+
+    {% for data in stationData %}
+
+      var station = new google.maps.LatLng{{data[3], data[4]}};
+      var marker{{data[0]}} = new google.maps.Marker({
+        position: station,
+        map: map
+      });
+
+      marker{{data[0]}}.addListener('click', function(){
+        data_to_backend = {'stationNum':'{{data[0]}}'}
+        $.post("{{url_for('test10')}}", data_to_backend, function(data){
+          dynamicData=JSON.parse(data);
+
+          var infowincontent{{data[0]}} = document.createElement('div');
+          var strong{{data[0]}} = document.createElement('strong');
+          strong{{data[0]}}.textContent = 'Station Number : ' + {{data[0]}};
+          infowincontent{{data[0]}}.appendChild(strong{{data[0]}});
+          infowincontent{{data[0]}}.appendChild(document.createElement('br'));
+
+          var text{{data[0]}} = document.createElement('text');
+          text{{data[0]}}.textContent = 'Station Name : ' + "{{data[1]|safe}}";
+          infowincontent{{data[0]}}.appendChild(text{{data[0]}});
+          infowincontent{{data[0]}}.appendChild(document.createElement('br'));
+
+          var text1{{data[0]}} = document.createElement('text');
+          text1{{data[0]}}.textContent = 'available_bike_stands : ' + dynamicData['available_bike_stands'];
+          infowincontent{{data[0]}}.appendChild(text1{{data[0]}});
+          infowincontent{{data[0]}}.appendChild(document.createElement('br'));
+
+          var text2{{data[0]}} = document.createElement('text');
+          text2{{data[0]}}.textContent = 'available_bikes : ' + dynamicData['available_bikes'];
+          infowincontent{{data[0]}}.appendChild(text2{{data[0]}});
+          infowincontent{{data[0]}}.appendChild(document.createElement('br'));
+
+          var detail{{data[0]}} = document.createElement('INPUT');
+          detail{{data[0]}}.setAttribute("type", "button");
+          detail{{data[0]}}.setAttribute("onclick", "showDetail({{data[0]}})");
+          detail{{data[0]}}.setAttribute("value", "More detail");
+          infowincontent{{data[0]}}.appendChild(detail{{data[0]}})
+
+          infoWindow.setContent(infowincontent{{data[0]}});
+          infoWindow.open(map, marker{{data[0]}} );
+        });
+      }); 
+    {% endfor %}
+    }
+
+    function showDetail(data){
+      document.getElementById("detail").innerHTML = data;
+      data_to_backend = data;
+      $.post("{{url_for('test10')}}", data_to_backend, function(data){
+
+
+      });
+    }
+
+    function findLocation(findLocationDiv, map) {
+
+      // Set CSS for the control border.
+    var findLocation = document.createElement('div');
+    findLocation.style.backgroundColor = '#fff';
+    findLocation.style.border = '2px solid #fff';
+    findLocation.style.borderRadius = '3px';
+    findLocation.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
+    findLocation.style.cursor = 'pointer';
+    findLocation.style.marginBottom = '22px';
+    findLocation.style.textAlign = 'center';
+    findLocation.title = 'Click to recenter the map';
+    findLocationDiv.appendChild(findLocation);
+
+    // Set CSS for the control interior.
+    var findLocationText = document.createElement('div');
+    findLocationText.style.color = 'rgb(25,25,25)';
+    findLocationText.style.fontFamily = 'Roboto,Arial,sans-serif';
+    findLocationText.style.fontSize = '16px';
+    findLocationText.style.lineHeight = '38px';
+    findLocationText.style.paddingLeft = '5px';
+    findLocationText.style.paddingRight = '5px';
+    findLocationText.innerHTML = 'Center Map';
+    findLocation.appendChild(findLocationText);
+
+    // Setup the click event listeners: simply set the map to Chicago.
+    findLocation.addEventListener('click', function() {
+      var infoWindow = new google.maps.InfoWindow({map: map});
+      if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(getSuccess, getError, {timeout:10000});
+              function getSuccess(position){  
+                var pos = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+
+              infoWindow.setPosition(pos);
+              infoWindow.setContent('Location found.');
+              map.setCenter(pos);
+              }
+              function getError() {
+                handleLocationError(true, infoWindow, map.getCenter());
+              };
+          } 
+          else {
+              handleLocationError(false, infoWindow, map.getCenter());
+          }
+    });
+
+  }
+  function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+        infoWindow.setPosition(pos);
+        infoWindow.setContent(browserHasGeolocation ?
+                              'Error: The Geolocation service failed.' :
+                              'Error: Your browser doesn\'t support geolocation.');
+    }
+  </script>
+{% endblock %}
+

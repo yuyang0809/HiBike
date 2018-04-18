@@ -1,0 +1,130 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <div id="dublinmap"></div>
+  <div id="curve_chart" style="width: 900px; height: 500px"></div>
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ&callback=initmymap">
+  </script>
+  <script>
+    function initmymap(){
+      var station = new google.maps.LatLng({{stationData[0][3]|safe}}, {{stationData[0][4]|safe}});
+      var map = new google.maps.Map(document.getElementById("dublinmap"),{
+        center: station,
+        zoom:14,
+      });
+
+      var marker = new google.maps.Marker({
+        position: station,
+        map: map
+      });
+
+      var findLocationDiv = document.createElement('div');
+      var FindLocation = new findLocation(findLocationDiv, map);
+      findLocationDiv.index = 1;
+      map.controls[google.maps.ControlPosition.TOP_CENTER].push(findLocationDiv);
+    }
+
+    function findLocation(findLocationDiv, map) {
+
+        // Set CSS for the control border.
+      var findLocation = document.createElement('div');
+      findLocation.style.backgroundColor = '#fff';
+      findLocation.style.border = '2px solid #fff';
+      findLocation.style.borderRadius = '3px';
+      findLocation.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
+      findLocation.style.cursor = 'pointer';
+      findLocation.style.marginBottom = '22px';
+      findLocation.style.textAlign = 'center';
+      findLocation.title = 'Click to recenter the map';
+      findLocationDiv.appendChild(findLocation);
+
+      // Set CSS for the control interior.
+      var findLocationText = document.createElement('div');
+      findLocationText.style.color = 'rgb(25,25,25)';
+      findLocationText.style.fontFamily = 'Roboto,Arial,sans-serif';
+      findLocationText.style.fontSize = '16px';
+      findLocationText.style.lineHeight = '38px';
+      findLocationText.style.paddingLeft = '5px';
+      findLocationText.style.paddingRight = '5px';
+      findLocationText.innerHTML = 'Center Map';
+      findLocation.appendChild(findLocationText);
+
+      // Setup the click event listeners: simply set the map to Chicago.
+      findLocation.addEventListener('click', function() {
+        var infoWindow = new google.maps.InfoWindow({map: map});
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(getSuccess, getError, {timeout:10000});
+          function getSuccess(position){  
+            var pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+
+            infoWindow.setPosition(pos);
+            infoWindow.setContent('Location found.');
+            map.setCenter(pos);
+          }
+          function getError() {
+            handleLocationError(true, infoWindow, map.getCenter());
+          };
+        } 
+        else {
+          handleLocationError(false, infoWindow, map.getCenter());
+        }
+    });
+
+  }
+  function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+    infoWindow.setPosition(pos);
+    infoWindow.setContent(browserHasGeolocation ?
+                          'Error: The Geolocation service failed.' :
+                          'Error: Your browser doesn\'t support geolocation.');
+  }
+
+  </script>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      alldata={{alldata|tojson|safe}}
+      google.charts.load('current', {'packages':['corechart','line']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+          var data = new google.visualization.DataTable();
+          data.addColumn('string','x')
+          data.addColumn('number', 'Available bikes');
+          data.addColumn('number', 'Available bike stands');
+          data.addRows(alldata);
+
+        var options = {
+          title: 'Past 24 hours',
+          hAxis: {
+            title: 'Time',
+            showTextEvery: 2
+          },
+          vAxis: {
+            viewWindow:{min:-5},
+            title: 'Numbers'
+          },
+          lineWidth: 2,
+          width:800,
+          height:400,
+          pointSize: 5,
+          viewWindow: {min: 0, max: 'auto'},
+          gridlines: { count: 3},
+          curveType: 'function',
+          legend: { position: 'bottom' }
+        };
+
+        var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+
+        chart.draw(data, options);
+      }
+    </script>
+{% endblock %}
+
+
+    
+   
+            
+    

@@ -1,0 +1,45 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<p>Click the button to get your coordinates.</p>
+
+<button onclick="getLocation()">Try It</button>
+
+<p id="demo"></p>
+
+ <form action="/test" method="post">
+    <legend>Search for the suitable stations.</legend>
+    <input type="text" name="target" value="Please input the station name or target address">
+    <br>
+    <input type="submit" value="Submit">
+</form>
+
+<script>
+var x = document.getElementById("demo");
+
+function getLocation() {
+	if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(getSuccess, getError, {timeout:10000});
+        function getSuccess(position){	
+            navigator.geolocation.getCurrentPosition(showPosition);
+        }
+        function getError() {
+           x.innerHTML = "error.";
+         };
+    } 
+    else {
+       x.innerHTML = "Geolocation is not supported by this browser.";
+    }
+}
+
+function showPosition(position) {
+    x.innerHTML = "Latitude: " + position.coords.latitude + 
+    "<br>Longitude: " + position.coords.longitude;
+    data_to_backend = {'Id':'distant', 'lat':position.coords.latitude, 'lng':position.coords.longitude};
+    $.post("{{url_for('test00')}}", data_to_backend, function(data){
+    	data=JSON.parse(data);
+    	x.innerHTML+='<br>'+data['rows'][0]['elements'][0]['distance']['value']+'m';
+	});
+}
+</script>
+{% endblock %}
