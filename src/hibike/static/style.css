@@ -14,7 +14,6 @@ html,body{padding:0; margin:0;}
 /*-----Search Bar-----*/
 
 .searchForm{
-
   height: 50px;
   background-color: #CC0033;
 }
@@ -103,7 +102,7 @@ html,body{padding:0; margin:0;}
 }
 #dublinmap {
   height: 700px;
-  width: 700px;
+  width: 1300px;
   float: left;
 }
 

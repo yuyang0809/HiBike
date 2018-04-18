@@ -8,7 +8,7 @@
             <option name="searchOption" value="Station Name">Station Name</option>
             <option name="searchOption" value="Station Number">Station Number</option>
             <option name="searchOption" value="Station Address">Station Address</option>
-            <option name="searchOption" value="Your address">Your Location</option>
+            <option name="searchOption" value="Your address">Current Location</option>
         </select> 
       </div>  
       
@@ -42,6 +42,11 @@
         	center: dbmap,
         	zoom:14,
      	});
+
+     	var findLocationDiv = document.createElement('div');
+     	var FindLocation = new findLocation(findLocationDiv, map);
+		  findLocationDiv.index = 1;
+		  map.controls[google.maps.ControlPosition.TOP_CENTER].push(findLocationDiv);
 
     	var infoWindow = new google.maps.InfoWindow;
 
@@ -103,7 +108,69 @@
     }
 
     function showDetail(stationNum){
-    	window.location.href="/station/"+stationNum;
+    	data_to_backend = {'Id':'2','stationNum':stationNum};
+    	$.post("{{url_for('communicate')}}", data_to_backend, function(data){
+    		dynamicData=JSON.parse(data);
+  //{'last_update':data[0], 'banking':data[1], 'bonus':data[2], 'status':data[3], 'bike_stands':data[4], 'weather':data[5], 'temperature':data[6]}
+  			document.getElementById("detail").innerHTML = dynamicData['last_update'];
+ 			window.location.href = "#detail";
+    	});
+    }
+
+    function findLocation(findLocationDiv, map) {
+
+  		// Set CSS for the control border.
+    	var findLocation = document.createElement('div');
+    	findLocation.style.backgroundColor = '#fff';
+    	findLocation.style.border = '2px solid #fff';
+    	findLocation.style.borderRadius = '3px';
+    	findLocation.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
+    	findLocation.style.cursor = 'pointer';
+    	findLocation.style.marginBottom = '22px';
+    	findLocation.style.textAlign = 'center';
+    	findLocation.title = 'Click to recenter the map';
+    	findLocationDiv.appendChild(findLocation);
+
+    	// Set CSS for the control interior.
+    	var findLocationText = document.createElement('div');
+    	findLocationText.style.color = 'rgb(25,25,25)';
+    	findLocationText.style.fontFamily = 'Roboto,Arial,sans-serif';
+    	findLocationText.style.fontSize = '16px';
+    	findLocationText.style.lineHeight = '38px';
+    	findLocationText.style.paddingLeft = '5px';
+    	findLocationText.style.paddingRight = '5px';
+    	findLocationText.innerHTML = 'Center Map';
+    	findLocation.appendChild(findLocationText);
+
+		// Setup the click event listeners: simply set the map to Chicago.
+  		findLocation.addEventListener('click', function() {
+  			var infoWindow = new google.maps.InfoWindow({map: map});
+  			if (navigator.geolocation) {
+            		navigator.geolocation.getCurrentPosition(getSuccess, getError, {timeout:10000});
+            		function getSuccess(position){
+              		var pos = {
+                			lat: position.coords.latitude,
+                			lng: position.coords.longitude
+              		};
+
+              	infoWindow.setPosition(pos);
+              	infoWindow.setContent('Location found.');
+              	map.setCenter(pos);
+            		}
+            		function getError() {
+              		handleLocationError(true, infoWindow, map.getCenter());
+            		};
+         		}
+        else {
+            		handleLocationError(false, infoWindow, map.getCenter());
+        }
+  		});
+	  }
+	function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+        infoWindow.setPosition(pos);
+        infoWindow.setContent(browserHasGeolocation ?
+                              'Error: The Geolocation service failed.' :
+                              'Error: Your browser doesn\'t support geolocation.');
     }
 
     $("#stationId").bind("input propertychange",function(){
@@ -126,8 +193,7 @@
           data=JSON.parse(data);
           window.location.href="/station/"+data['station'];
         });
-      }else if(content != '')
-      {
+      }else{
         for(var i=0; i<stationData.length; i++){
           switch (method) {
             case "Station Name":
