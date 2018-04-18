@@ -3,16 +3,25 @@ __author__ = "xuanchen yao"
 __copyright__ = "xuanchen yao"
 __license__ = "mit"
 
-
+# from test_pandas import train
 from flask import Flask, render_template, url_for, redirect
 from flask import request
 import json
-from info import *
 import requests
 from datetime import datetime
 import mysql.connector
 from distance import dis
 
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from datetime import datetime
+
+rds_host='mybike.c0jxuz6r8olg.us-west-2.rds.amazonaws.com'
+name='hibike'
+pwd='zx123456'
+db_name='bike'
+port=3306
 
 app = Flask(__name__)
 conn = mysql.connector.connect(host=rds_host,user=name, password=pwd, database=db_name)
@@ -21,6 +30,27 @@ cur = conn.cursor()
 cur.execute("select * from Bike_Stations")
 stationData = cur.fetchall()
 
+
+
+import threading as thd
+import time
+di={}
+diCol = {}
+def renewdict():
+    global di
+    global diCol
+    print('work')
+    di, diCol = getformlation()
+    print('done')
+    print(di)
+    thd.Timer(86400,renewdict).start()
+
+def getformlation():
+    di = {}
+    diCol = {}
+    for i in stationData:
+        di[i[0]], diCol[i[0]] = train(i[0])
+    return(di, diCol)
 
 	#if methodId == 'distant':
 		#data={'lat':request.values.get('lat'), 'lng':request.values.get('lng')}
@@ -34,9 +64,9 @@ stationData = cur.fetchall()
 
 @app.route('/', methods=['get'])
 def index():
-    cur.execute('select weather_main,temp from weather ORDER BY last_update DESC limit 0, 1')
-    weatherData = cur.fetchone()
-    return render_template('index.html', stationData=stationData,weatherData=weatherData)
+	cur.execute('select weather_main,temp from weather ORDER BY last_update DESC limit 0, 1')
+	weatherData = cur.fetchone()
+	return render_template('index.html', stationData=stationData,weatherData=weatherData)
 
 @app.route('/', methods=['post'])
 def communicate():
@@ -75,8 +105,7 @@ def communicate():
 			return json.dumps({'station':nearNum})
 		else:
 			return json.dumps({'station':None})
-
-
+	
 @app.route('/station/<stationNum>', methods=['get'])
 def stationDetail(stationNum=None):
     cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
@@ -84,21 +113,70 @@ def stationDetail(stationNum=None):
     cur.execute("select concat(hour(last_update),':00') as time,available_bike_stands,available_bikes from station_"+str(stationNum)+' WHERE last_update >=  NOW() - interval 1 day  GROUP BY floor(hour(last_update))  ORDER BY last_update ASC;')
     alldata = cur.fetchall()
     cur.execute("select * from Bike_Stations where Number = {}".format(stationNum))
-    stationData = cur.fetchall()
-    return render_template('stationDetail.html', stationNum=stationNum, detailData=detailData, stationData=stationData,alldata=alldata)
+    stationDetail = cur.fetchall()
+    print(stationDetail)
+    return render_template('stationDetail.html', stationNum=stationNum, detailData=detailData, stationDetail=stationDetail, alldata=alldata, stationData=stationData)
 
-@app.route('/test', methods=['get'])
-def index1():
-	return render_template('index1.html', stationData=stationData)
+
+
+@app.route('/station/<stationNum>', methods=['post'])
+def stationDetail1(stationNum=None):
+	methodId = request.values.get('Id')
+	if methodId == 'PredictForm':
+		PredictTime = request.values.get('PredictTime')
+		return json.dumps({'rfc_predictions':rfc_predictions})
+		cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
+		detailData = cur.fetchone()
+		cur.execute("select * from Bike_Stations where Number = {}".format(stationNum))
+		stationDetail = cur.fetchall()
+		diCol_pr = {}
+		global diCol
+		global di
+		stationNum = int(stationNum)
+		try:
+		    for i in diCol[stationNum]:
+		        diCol_pr[i] = 0
+		    r_w = requests.get('http://api.openweathermap.org/data/2.5/forecast?q=Dublin,IE&APPID=7b3e054e55cf81602b4298ca04a0fa18')
+
+		    diCol_pr['pre_available_bikes'] = detailData[-1]
+		    di['pre_minute'] = detailData[0].hour * 60 + detailData[0].minute
+
+		    diCol_pr['day'] = datetime.utcfromtimestamp(r_w.json()['list'][0]['dt']).day
+		    diCol_pr['hour'] = datetime.utcfromtimestamp(r_w.json()['list'][0]['dt']).hour
+		    diCol_pr['humidity'] = r_w.json()['list'][0]['main']['humidity']
+		    diCol_pr['minute'] = datetime.utcfromtimestamp(r_w.json()['list'][0]['dt']).minute + datetime.utcfromtimestamp(r_w.json()['list'][0]['dt']).hour * 60
+		    diCol_pr['temp'] = r_w.json()['list'][0]['main']['temp']
+		    diCol_pr['wind'] = r_w.json()['list'][0]['wind']['speed']
+
+		    weather = r_w.json()['list'][0]['weather'][0]['main']
+		    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday',
+		                'Friday', 'Saturday', 'Sunday']
+		    weekday = weekdays[datetime.utcfromtimestamp(r_w.json()['list'][0]['dt']).weekday()]
+		    if 'weather_main_{}'.format(weather) in diCol_pr.keys():
+		        diCol_pr['weather_main_{}'.format(weather)] = 1
+		        if 'weekday_{}'.format(weekday) in diCol_pr.keys():
+		            diCol_pr['weekday_{}'.format(weekday)] = 1
+
+		            predi = pd.DataFrame([diCol_pr])
+		            rfc_predictions = "available_bikes : {}".format(int(di[stationNum].predict(predi)))
+		            return json.dumps({'rfc_predictions':rfc_predictions})
+		        else:
+		            rfc_predictions = "Something wrong, day information get error."
+		            return json.dumps({'rfc_predictions':rfc_predictions})
+		    else:
+		        rfc_predictions = "A new weather may appear, not enough data to make a prediction."
+		        return json.dumps({'rfc_predictions':rfc_predictions})
+		except Exception as e:
+		    rfc_predictions = "We rebuild the prediction module, please try 10 minutes late. {}".format(e) 
+		    return json.dumps({'rfc_predictions':rfc_predictions})
 
 
 with app.test_request_context():
 	print(url_for('communicate'))
 
-@app.route('/try', methods=['get'])
-def try1():
-	return render_template('try.html', stationData=stationData)
 
 if __name__ == '__main__' :
-   	#app.run(debug=True, ssl_context='adhoc')
-    app.run(debug=True)
+	t = thd.Thread(target=renewdict, name='renewThread')
+	#t.start()
+	app.run(debug=True)
+    

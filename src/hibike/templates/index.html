@@ -1,11 +1,12 @@
 {% extends 'layout.html' %}
 
-{% block body %}
 
+{% block body %}
+  <script> $SCRIPT_ROOT = {{ request.script_root|tojson|safe }}; </script>
     <form class="searchForm" autocomplete="off">
       <div class="1">
-        <select class="searchSelection">
-            <option name="searchOption" value="Station Name">Station Name</option>
+        <select id="searchSelection">
+            <option name="searchOption" value="Station Name" selected>Station Name</option>
             <option name="searchOption" value="Station Number">Station Number</option>
             <option name="searchOption" value="Station Address">Station Address</option>
             <option name="searchOption" value="Your address">Your Location</option>
@@ -22,39 +23,50 @@
     </form>
 
 
+    <div class="mapInformation">
+          <div id="dublinmap"></div>
+          <div id="detail">
+                <div id="weather_image"></div>
+                <div id="weather_description"></div>
+                <div id='tempreature'></div>
+        
+          </div>
+    </div>
+  <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ&libraries=places&callback=initmymap">
+  </script>
 
-
-
-<div class="mapInformation">
-      <div id="dublinmap"></div>
-      <div id="detail">detailed information</div>
-</div>
-      <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ&libraries=places&callback=initmymap&initAutocomplete">
-      </script>
+     
 <script>
-    stationData={{stationData|tojson|safe}}
     
+    weatherData={{weatherData|tojson|safe}}
+    stationData={{stationData|tojson|safe}}
     function initmymap(){
-    	// init map //
-    	var dbmap=new google.maps.LatLng(53.345842,-6.270120);
+      // init map //
+      var dbmap=new google.maps.LatLng(53.345842,-6.270120);
       var map = new google.maps.Map(document.getElementById("dublinmap"),{
-        	center: dbmap,
-        	zoom:14,
-     	});
+          center: dbmap,
+          zoom:13.3,
+      });
 
-    	var infoWindow = new google.maps.InfoWindow;
+      var infoWindow = new google.maps.InfoWindow;
 
       // Create the autocomplete object, restricting the search to geographical
       // location types.
-      autocomplete = new google.maps.places.Autocomplete(
-        /** @type {!HTMLInputElement} */
-        (document.getElementById('stationId')),
-        {types: ['geocode']});
-
-      // When the user selects an address from the dropdown, populate the address
-      // fields in the form.
-      autocomplete.addListener('place_changed', fillInAddress);
+      $('.searchSelection').on('change', function() {
+        var method=$(".searchSelection option:selected").val();
+        if(method=="Your address"){ 
+          autocomplete = new google.maps.places.Autocomplete(
+          /** @type {!HTMLInputElement} */
+          (document.getElementById('stationId')),
+          {types: ['geocode']});
+          
+          // When the user selects an address from the dropdown, populate the address
+          // fields in the form.
+          autocomplete.addListener('place_changed', fillInAddress);
+        }
+      })
+      
 
       stationData.forEach(function(element) {
 
@@ -103,14 +115,15 @@
     }
 
     function showDetail(stationNum){
-    	window.location.href="/station/"+stationNum;
+      window.location.href="/station/"+stationNum;
     }
 
     $("#stationId").bind("input propertychange",function(){
       sub(0);
     });
 
-    $("#searchForm").submit(function(evt){
+
+    $(".searchForm").submit(function(evt){
       evt.preventDefault();
       sub(1);
     });
@@ -121,7 +134,7 @@
       var stationList=[];
       document.getElementById("match").innerHTML='';
       if(n==1 && method=="Your address"){
-        data_to_backend = {'Id':'searchForm','address':content};
+        data_to_backend = {'Id':'searchForm','address':content}; 
         $.post("{{url_for('communicate')}}", data_to_backend, function(data){
           data=JSON.parse(data);
           window.location.href="/station/"+data['station'];
@@ -173,11 +186,10 @@
       }
     }
 
-      
+  
     function fillInAddress() {
       $("#searchForm").bind("input propertychange",function(){
-      var method=$("input[name=searchOption]:checked").val();
-      if( method=="Your address"){  
+      if( method=="Your address"){ 
           // Get the place details from the autocomplete object.
           var place = autocomplete.getPlace();
 
@@ -198,6 +210,41 @@
         }
       });
     }
+
+    window.onload = function() {
+        var description=weatherData[0]
+        switch(description)
+            {
+                case "Clouds":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Cloud.ico')}}'>"
+                    break;
+                case "Drizzle":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Drizzle.ico')}}'>"
+                    break;
+                case "Clear":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Sunny.ico')}}'>"
+                    break;
+                case "Fog":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Fog.png')}}'>"
+                    break;
+                case "Mist":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Mist.ico')}}'>"
+                    break;
+                case "Rain":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Rain.ico')}}'>"
+                    break;
+                case "Snow":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Snow.ico')}}'>"
+                    break;
+                case "Thunderstorm":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Thunderstorms.ico')}}'>"
+                    break;
+                default:
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Moon.ico')}}'>"              
+            }
+        document.getElementById("weather_description").innerHTML =description;
+        document.getElementById("tempreature").innerHTML =weatherData[1]+"°F"; 
+    };
 
   </script>
 {% endblock %}
