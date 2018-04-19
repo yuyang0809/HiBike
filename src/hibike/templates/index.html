@@ -1,11 +1,15 @@
 {% extends 'layout.html' %}
-
+{% block head %}
+  <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ&libraries=places&callback=initmymap">
+  </script>
+{% endblock %}
 
 {% block body %}
-  <script> $SCRIPT_ROOT = {{ request.script_root|tojson|safe }}; </script>
+  <script> $SCRIPT_ROOT = {{ request.script_root|tojson|safe}}; </script>
     <form class="searchForm" autocomplete="off">
       <div class="1">
-        <select id="searchSelection">
+        <select class="searchSelection">
             <option name="searchOption" value="Station Name" selected>Station Name</option>
             <option name="searchOption" value="Station Number">Station Number</option>
             <option name="searchOption" value="Station Address">Station Address</option>
@@ -25,31 +29,26 @@
 
     <div class="mapInformation">
           <div id="dublinmap"></div>
-          <div id="detail">
-                <div id="weather_image"></div>
-                <div id="weather_description"></div>
-                <div id='tempreature'></div>
-        
-          </div>
+          <div id="detail">detailed information</div>
     </div>
-  <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ&libraries=places&callback=initmymap">
-  </script>
 
+    <div id="weather">
+        <div id="weather_image"></div>
+        <div id="weather_description"></div>
+        <div id='tempreature'></div>
+    </div>
      
 <script>
-    
-    weatherData={{weatherData|tojson|safe}}
     stationData={{stationData|tojson|safe}}
     function initmymap(){
-      // init map //
-      var dbmap=new google.maps.LatLng(53.345842,-6.270120);
+    	// init map //
+    	var dbmap=new google.maps.LatLng(53.345842,-6.270120);
       var map = new google.maps.Map(document.getElementById("dublinmap"),{
-          center: dbmap,
-          zoom:13.3,
-      });
+        	center: dbmap,
+        	zoom:14,
+     	});
 
-      var infoWindow = new google.maps.InfoWindow;
+    	var infoWindow = new google.maps.InfoWindow;
 
       // Create the autocomplete object, restricting the search to geographical
       // location types.
@@ -115,7 +114,7 @@
     }
 
     function showDetail(stationNum){
-      window.location.href="/station/"+stationNum;
+    	window.location.href="/station/"+stationNum;
     }
 
     $("#stationId").bind("input propertychange",function(){
@@ -212,7 +211,7 @@
     }
 
     window.onload = function() {
-        var description=weatherData[0]
+        var description={{weatherData[0]|tojson|safe}}
         switch(description)
             {
                 case "Clouds":
@@ -243,7 +242,7 @@
                     document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Moon.ico')}}'>"              
             }
         document.getElementById("weather_description").innerHTML =description;
-        document.getElementById("tempreature").innerHTML =weatherData[1]+"°F"; 
+        document.getElementById("tempreature").innerHTML = {{weatherData[1]|tojson|safe}}+"°F"; 
     };
 
   </script>

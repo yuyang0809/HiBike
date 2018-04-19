@@ -1,34 +1,54 @@
 {% extends 'layout.html' %}
 
-{% block body %}
-    <form class="searchForm" autocomplete="off">
-      <div class="1">
-        <select class="searchSelection">
-            <option name="searchOption" value="Station Name">Station Name</option>
-            <option name="searchOption" value="Station Number">Station Number</option>
-            <option name="searchOption" value="Station Address">Station Address</option>
-            <option name="searchOption" value="Your address">Your Location</option>
-        </select> 
-      </div>  
-    </form>
-      <div class="2">
-        <div id="searchContent">
-          <input id="stationId" type="text" name="target" placeholder="Searching...">
-          <input id="searchSubmit" type="submit" value="Submit">
-        </div>
-        <div id="match"></div>
-      </div>
-    </form>
-<div class="mapInformation">
-  <div id="dublinmap"></div>
-  <div id="curve_chart"></div>
-</div>
+{% block head %}
   <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ&callback=initmymap">
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ&libraries=places&callback=initmymap">
   </script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+{% endblock %}
+
+{% block body %}
+  <form class="searchForm" autocomplete="off">
+    <div class="1">
+      <select class="searchSelection">
+          <option name="searchOption" value="Station Name">Station Name</option>
+          <option name="searchOption" value="Station Number">Station Number</option>
+          <option name="searchOption" value="Station Address">Station Address</option>
+          <option name="searchOption" value="Your address">Your Location</option>
+      </select> 
+    </div>  
+    
+    <div class="2">
+      <div id="searchContent">
+        <input id="stationId" type="text" name="target" placeholder="Searching...">
+        <input id="searchSubmit" type="submit" value="Submit">
+      </div>
+      <div id="match"></div>
+    </div>
+  </form>
+
+  <form class="PredictForm" autocomplete="off">
+    <div id="PredictContent">
+      <p>Time for predict </p>
+      <input id="PredictTime" type="text" name="targetTime" placeholder="Input time..">
+      <input id="PredictSubmit" type="submit" value="Submit">
+    </div>
+  </form>
+  <p id="time"></p>
+  <p id='bikenow'>Available_bikes now:{{detailData[4]|tojson|safe}}</p>
+  <p id='bikefut'>Available_bikes future:</p>
+  <div id="dublinmap"></div>
+  <div id="curve_chart" style="width: 900px; height: 500px"></div>
+  <div id="weather">
+    <div id="weather_image"></div>
+    <div id="weather_description"></div>
+    <div id='tempreature'></div>
+  </div>
+
   <script>
+    stationData={{stationData|tojson|safe}}
     function initmymap(){
-      var station = new google.maps.LatLng({{stationData[0][3]|safe}}, {{stationData[0][4]|safe}});
+      var station = new google.maps.LatLng({{stationDetail[0][3]|safe}}, {{stationDetail[0][4]|safe}});
       var map = new google.maps.Map(document.getElementById("dublinmap"),{
         center: station,
         zoom:14,
@@ -39,72 +59,24 @@
         map: map
       });
 
-      var findLocationDiv = document.createElement('div');
-      var FindLocation = new findLocation(findLocationDiv, map);
-      findLocationDiv.index = 1;
-      map.controls[google.maps.ControlPosition.TOP_CENTER].push(findLocationDiv);
+      $('.searchSelection').on('change', function() {
+        var method=$(".searchSelection option:selected").val();
+        if(method=="Your address"){ 
+          autocomplete = new google.maps.places.Autocomplete(
+          /** @type {!HTMLInputElement} */
+          (document.getElementById('stationId')),
+          {types: ['geocode']});
+ 
+          // When the user selects an address from the dropdown, populate the address
+          // fields in the form.
+          autocomplete.addListener('place_changed', fillInAddress);
+        }
+        else{
+          autocomplete = 'off';
+        }
+      })
     }
 
-    function findLocation(findLocationDiv, map) {
-
-        // Set CSS for the control border.
-      var findLocation = document.createElement('div');
-      findLocation.style.backgroundColor = '#fff';
-      findLocation.style.border = '2px solid #fff';
-      findLocation.style.borderRadius = '3px';
-      findLocation.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
-      findLocation.style.cursor = 'pointer';
-      findLocation.style.marginBottom = '22px';
-      findLocation.style.textAlign = 'center';
-      findLocation.title = 'Click to recenter the map';
-      findLocationDiv.appendChild(findLocation);
-
-      // Set CSS for the control interior.
-      var findLocationText = document.createElement('div');
-      findLocationText.style.color = 'rgb(25,25,25)';
-      findLocationText.style.fontFamily = 'Roboto,Arial,sans-serif';
-      findLocationText.style.fontSize = '16px';
-      findLocationText.style.lineHeight = '38px';
-      findLocationText.style.paddingLeft = '5px';
-      findLocationText.style.paddingRight = '5px';
-      findLocationText.innerHTML = 'Center Map';
-      findLocation.appendChild(findLocationText);
-
-      // Setup the click event listeners: simply set the map to Chicago.
-      findLocation.addEventListener('click', function() {
-        var infoWindow = new google.maps.InfoWindow({map: map});
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(getSuccess, getError, {timeout:10000});
-          function getSuccess(position){  
-            var pos = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            };
-
-            infoWindow.setPosition(pos);
-            infoWindow.setContent('Location found.');
-            map.setCenter(pos);
-          }
-          function getError() {
-            handleLocationError(true, infoWindow, map.getCenter());
-          };
-        } 
-        else {
-          handleLocationError(false, infoWindow, map.getCenter());
-        }
-    });
-
-  }
-  function handleLocationError(browserHasGeolocation, infoWindow, pos) {
-    infoWindow.setPosition(pos);
-    infoWindow.setContent(browserHasGeolocation ?
-                          'Error: The Geolocation service failed.' :
-                          'Error: Your browser doesn\'t support geolocation.');
-  }
-
-  </script>
-<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript">
       alldata={{alldata|tojson|safe}}
       google.charts.load('current', {'packages':['corechart','line']});
       google.charts.setOnLoadCallback(drawChart);
@@ -127,8 +99,8 @@
             title: 'Numbers'
           },
           lineWidth: 2,
-          width:500,
-          height:350,
+          width:800,
+          height:400,
           pointSize: 5,
           viewWindow: {min: 0, max: 'auto'},
           gridlines: { count: 3},
@@ -140,6 +112,154 @@
 
         chart.draw(data, options);
       }
+
+    window.onload = function() {
+      var d = new Date();
+      document.getElementById("time").innerHTML = d;
+    };
+
+    $("#stationId").bind("input propertychange",function(){
+      sub(0);
+    });
+
+
+    $(".searchForm").submit(function(evt){
+      evt.preventDefault();
+      sub(1);
+    });
+
+    function sub(n){
+      var content=$("#stationId").val();
+      var method=$("option[name=searchOption]:checked").val();
+      var stationList=[];
+      document.getElementById("match").innerHTML='';
+      if(n==1 && method=="Your address"){
+        data_to_backend = {'Id':'searchForm','address':content}; 
+        $.post("{{url_for('communicate')}}", data_to_backend, function(data){
+          data=JSON.parse(data);
+          window.location.href="/station/"+data['station'];
+        });
+      }else if(content != '')
+      {
+        for(var i=0; i<stationData.length; i++){
+          switch (method) {
+            case "Station Name":
+              if(stationData[i][1].replace(/[ ]/g,"").toLowerCase().indexOf(content.replace(/[ ]/g,"").toLowerCase())>=0){
+                if(n==0){
+                  document.getElementById("match").innerHTML += "<a href='/station/"+stationData[i][0]+"'>"+stationData[i][1]+'</a><br>';
+                }else{
+                  stationList.push(stationData[i][0]);
+                  }
+                }
+              break;
+            case "Station Number":
+              if(n==0){
+                if(stationData[i][0].toString().replace(/[ ]/g,"").indexOf(content.toString().replace(/[ ]/g,""))>=0){
+                  document.getElementById("match").innerHTML += "<a href='/station/"+stationData[i][0]+"'>"+stationData[i][0]+'</a><br>';
+                }
+              } else{
+                var testlist = [parseInt(stationData[i][0]),]
+                if(testlist.includes(parseInt(content))){
+                  stationList.push(stationData[i][0]);
+                }
+              };
+              break;
+            case "Station Address":
+              if(stationData[i][2].toLowerCase().replace(/[ ]/g,"").indexOf(content.replace(/[ ]/g,"").toLowerCase())>=0){
+                if(n==0){
+                  document.getElementById("match").innerHTML += "<a href='/station/"+stationData[i][0]+"'>"+stationData[i][2]+'</a><br>';
+                }
+                else{
+                  stationList.push(stationData[i][0]);
+                }
+              };
+              break;
+          }
+        }
+        if (n==1){
+          if(stationList.length==1){
+            window.location.href="/station/"+stationList[0];
+          }else{
+            alert("Your station is not correct.")
+          }
+        }
+      }
+    }
+
+  
+    function fillInAddress() {
+      $("#searchForm").bind("input propertychange",function(){
+      if( method=="Your address"){ 
+          // Get the place details from the autocomplete object.
+          var place = autocomplete.getPlace();
+
+          for (var component in componentForm) {
+            document.getElementById(component).value = '';
+            document.getElementById(component).disabled = false;
+          }
+
+          // Get each component of the address from the place details
+          // and fill the corresponding field on the form.
+          for (var i = 0; i < place.address_components.length; i++) {
+            var addressType = place.address_components[i].types[0];
+            if (componentForm[addressType]) {
+              var val = place.address_components[i][componentForm[addressType]];
+              document.getElementById(addressType).value = val;
+            }
+          }
+        }
+      });
+    }
+
+    window.onload = function() {
+        var description={{weatherData[0]|tojson|safe}}
+        switch(description)
+            {
+                case "Clouds":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Cloud.ico')}}'>"
+                    break;
+                case "Drizzle":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Drizzle.ico')}}'>"
+                    break;
+                case "Clear":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Sunny.ico')}}'>"
+                    break;
+                case "Fog":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Fog.png')}}'>"
+                    break;
+                case "Mist":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Mist.ico')}}'>"
+                    break;
+                case "Rain":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Rain.ico')}}'>"
+                    break;
+                case "Snow":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Snow.ico')}}'>"
+                    break;
+                case "Thunderstorm":
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Thunderstorms.ico')}}'>"
+                    break;
+                default:
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Moon.ico')}}'>"              
+            }
+        document.getElementById("weather_description").innerHTML =description;
+        document.getElementById("tempreature").innerHTML = {{weatherData[1]|tojson|safe}}+"°F"; 
+    };
+
+    $(".PredictForm").submit(function(evt){
+      evt.preventDefault();
+      var PredictTime=$("#PredictTime").val();
+      data_to_backend = {'Id':'PredictForm','PredictTime':PredictTime,'stationNum':{{stationNum}}}; 
+      $.post("{{url_for('stationDetail1')}}", data_to_backend, function(data){
+        alert('success');
+        data=JSON.parse(data); 
+        alert(data['rfc_predictions']) 
+        document.getElementById('bikefut').innerHTML = data['rfc_predictions']
+      })
+      .fail(function() {
+      alert( "error" );
+  })
+    });
     </script>
 {% endblock %}
 

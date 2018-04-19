@@ -3,19 +3,18 @@ __author__ = "xuanchen yao"
 __copyright__ = "xuanchen yao"
 __license__ = "mit"
 
-# from test_pandas import train
+from test_pandas import train
 from flask import Flask, render_template, url_for, redirect
 from flask import request
 import json
 import requests
-from datetime import datetime
+import datetime
 import mysql.connector
 from distance import dis
 
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from datetime import datetime
 
 rds_host='mybike.c0jxuz6r8olg.us-west-2.rds.amazonaws.com'
 name='hibike'
@@ -29,8 +28,11 @@ cur = conn.cursor()
 
 cur.execute("select * from Bike_Stations")
 stationData = cur.fetchall()
+cur.execute('select weather_main,temp from weather ORDER BY last_update DESC limit 0, 1')
+weatherData = cur.fetchone()
 
 
+from test_pandas import train
 
 import threading as thd
 import time
@@ -42,7 +44,6 @@ def renewdict():
     print('work')
     di, diCol = getformlation()
     print('done')
-    print(di)
     thd.Timer(86400,renewdict).start()
 
 def getformlation():
@@ -64,9 +65,7 @@ def getformlation():
 
 @app.route('/', methods=['get'])
 def index():
-	cur.execute('select weather_main,temp from weather ORDER BY last_update DESC limit 0, 1')
-	weatherData = cur.fetchone()
-	return render_template('index.html', stationData=stationData,weatherData=weatherData)
+	return render_template('index.html', stationData=stationData, weatherData=weatherData)
 
 @app.route('/', methods=['post'])
 def communicate():
@@ -114,58 +113,103 @@ def stationDetail(stationNum=None):
     alldata = cur.fetchall()
     cur.execute("select * from Bike_Stations where Number = {}".format(stationNum))
     stationDetail = cur.fetchall()
-    print(stationDetail)
-    return render_template('stationDetail.html', stationNum=stationNum, detailData=detailData, stationDetail=stationDetail, alldata=alldata, stationData=stationData)
+    return render_template('stationDetail.html', stationNum=stationNum, detailData=detailData, stationDetail=stationDetail, alldata=alldata, stationData=stationData, weatherData=weatherData)
 
 
 
-@app.route('/station/<stationNum>', methods=['post'])
-def stationDetail1(stationNum=None):
+@app.route('/station/', methods=['post'])
+def stationDetail1():
 	methodId = request.values.get('Id')
-	if methodId == 'PredictForm':
-		PredictTime = request.values.get('PredictTime')
-		return json.dumps({'rfc_predictions':rfc_predictions})
-		cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
-		detailData = cur.fetchone()
-		cur.execute("select * from Bike_Stations where Number = {}".format(stationNum))
-		stationDetail = cur.fetchall()
-		diCol_pr = {}
-		global diCol
-		global di
+	PredictTime = request.values.get('PredictTime')
+	stationNum = request.values.get('stationNum')
+	cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
+	detailData = cur.fetchone()
+	cur.execute('select * from weather ORDER BY last_update DESC limit 0, 1')
+	weatherData = cur.fetchone()
+	diCol_pr = {}
+	global diCol
+	global di
+	futTime = ((datetime.datetime.now() - weatherData[0]).total_seconds() / 60 ) + float(PredictTime)
+	if (futTime > 180) :
 		stationNum = int(stationNum)
 		try:
-		    for i in diCol[stationNum]:
-		        diCol_pr[i] = 0
-		    r_w = requests.get('http://api.openweathermap.org/data/2.5/forecast?q=Dublin,IE&APPID=7b3e054e55cf81602b4298ca04a0fa18')
+			for i in diCol[stationNum]:
+				diCol_pr[i] = 0
+			r_w = requests.get('http://api.openweathermap.org/data/2.5/forecast?q=Dublin,IE&APPID=7b3e054e55cf81602b4298ca04a0fa18')
 
-		    diCol_pr['pre_available_bikes'] = detailData[-1]
-		    di['pre_minute'] = detailData[0].hour * 60 + detailData[0].minute
+			diCol_pr['pre_available_bikes'] = detailData[-1]
+			di['pre_minute'] = detailData[0].hour * 60 + detailData[0].minute
 
-		    diCol_pr['day'] = datetime.utcfromtimestamp(r_w.json()['list'][0]['dt']).day
-		    diCol_pr['hour'] = datetime.utcfromtimestamp(r_w.json()['list'][0]['dt']).hour
-		    diCol_pr['humidity'] = r_w.json()['list'][0]['main']['humidity']
-		    diCol_pr['minute'] = datetime.utcfromtimestamp(r_w.json()['list'][0]['dt']).minute + datetime.utcfromtimestamp(r_w.json()['list'][0]['dt']).hour * 60
-		    diCol_pr['temp'] = r_w.json()['list'][0]['main']['temp']
-		    diCol_pr['wind'] = r_w.json()['list'][0]['wind']['speed']
+			diCol_pr['month'] = datetime.datetime.now().month + (datetime.datetime.now().day + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24) // 30
+			diCol_pr['day'] = datetime.datetime.now().day + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24
+			diCol_pr['hour'] = datetime.datetime.now().hour + PredictTime // 60
+			diCol_pr['minute'] = datetime.datetime.now().minute + datetime.datetime.now().hour * 60 + PredictTime 
+			diCol_pr['humidity'] = r_w.json()['list'][0]['main']['humidity']
+			diCol_pr['temp'] = r_w.json()['list'][0]['main']['temp']
+			diCol_pr['wind'] = r_w.json()['list'][0]['wind']['speed']
+			weekday = datetime.datetime.now().weekday() + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24
+			if weekday >= 7:
+				weekday = 0
 
-		    weather = r_w.json()['list'][0]['weather'][0]['main']
-		    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday',
-		                'Friday', 'Saturday', 'Sunday']
-		    weekday = weekdays[datetime.utcfromtimestamp(r_w.json()['list'][0]['dt']).weekday()]
-		    if 'weather_main_{}'.format(weather) in diCol_pr.keys():
-		        diCol_pr['weather_main_{}'.format(weather)] = 1
-		        if 'weekday_{}'.format(weekday) in diCol_pr.keys():
-		            diCol_pr['weekday_{}'.format(weekday)] = 1
+			weather = r_w.json()['list'][0]['weather'][0]['main']
+			weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+			weekday = weekdays[weekday]
+			if 'weather_main_{}'.format(weather) in diCol_pr.keys():
+				diCol_pr['weather_main_{}'.format(weather)] = 1
+				if 'weekday_{}'.format(weekday) in diCol_pr.keys():
+					diCol_pr['weekday_{}'.format(weekday)] = 1
 
-		            predi = pd.DataFrame([diCol_pr])
-		            rfc_predictions = "available_bikes : {}".format(int(di[stationNum].predict(predi)))
-		            return json.dumps({'rfc_predictions':rfc_predictions})
-		        else:
-		            rfc_predictions = "Something wrong, day information get error."
-		            return json.dumps({'rfc_predictions':rfc_predictions})
-		    else:
-		        rfc_predictions = "A new weather may appear, not enough data to make a prediction."
-		        return json.dumps({'rfc_predictions':rfc_predictions})
+					predi = pd.DataFrame([diCol_pr])
+					rfc_predictions = "available_bikes : {}".format(int(di[stationNum].predict(predi)))
+					return json.dumps({'rfc_predictions':rfc_predictions})
+				else:
+					rfc_predictions = "Something wrong, day information get error."
+					return json.dumps({'rfc_predictions':rfc_predictions})
+			else:
+				rfc_predictions = "A new weather may appear, not enough data to make a prediction."
+				return json.dumps({'rfc_predictions':rfc_predictions})
+		except Exception as e:
+			rfc_predictions = "We rebuild the prediction module, please try 10 minutes late. {}".format(e) 
+			return json.dumps({'rfc_predictions':rfc_predictions})
+	else :
+		stationNum = int(stationNum)
+		try:
+			for i in diCol[stationNum]:
+				diCol_pr[i] = 0
+
+			diCol_pr['pre_available_bikes'] = detailData[-1]
+			di['pre_minute'] = detailData[0].hour * 60 + detailData[0].minute
+
+			diCol_pr['month'] = datetime.datetime.now().month + (datetime.datetime.now().day + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24) // 30
+			diCol_pr['day'] = datetime.datetime.now().day + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24
+			diCol_pr['hour'] = datetime.datetime.now().hour + PredictTime // 60
+			diCol_pr['minute'] = datetime.datetime.now().minute + datetime.datetime.now().hour * 60 +  PredictTime 
+
+			diCol_pr['humidity'] = float(weatherData[2])
+			diCol_pr['temp'] = weatherData[3]
+			diCol_pr['wind'] = weatherData[5]
+
+			weekday = datetime.datetime.now().weekday() + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24
+			if weekday >= 7:
+				weekday = 0
+			weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+			weekday = weekdays[weekday]
+
+			weather = weatherData[1]
+			if 'weather_main_{}'.format(weather) in diCol_pr.keys():
+				diCol_pr['weather_main_{}'.format(weather)] = 1
+				if 'weekday_{}'.format(weekday) in diCol_pr.keys():
+					diCol_pr['weekday_{}'.format(weekday)] = 1
+
+					predi = pd.DataFrame([diCol_pr])
+					rfc_predictions = "available_bikes : {}".format(int(di[stationNum].predict(predi)))
+					return json.dumps({'rfc_predictions':rfc_predictions})
+				else:
+					rfc_predictions = "Something wrong, day information get error."
+					return json.dumps({'rfc_predictions':rfc_predictions})
+			else:
+				rfc_predictions = "A new weather may appear, not enough data to make a prediction."
+				return json.dumps({'rfc_predictions':rfc_predictions})
 		except Exception as e:
 		    rfc_predictions = "We rebuild the prediction module, please try 10 minutes late. {}".format(e) 
 		    return json.dumps({'rfc_predictions':rfc_predictions})
@@ -177,6 +221,6 @@ with app.test_request_context():
 
 if __name__ == '__main__' :
 	t = thd.Thread(target=renewdict, name='renewThread')
-	#t.start()
+	t.start()
 	app.run(debug=True)
     
