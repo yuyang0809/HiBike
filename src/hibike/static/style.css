@@ -116,9 +116,10 @@ html,body{
   height: 500px;
   width: 300px;
   background-color: black;
+  filter:alpha(opacity=50); /*支持IE */ 
   color: white; 
   float: left;
-  opacity:0.8;
+  opacity:0.5;
 }
 
 /*--------curve chart----------*/

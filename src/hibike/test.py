@@ -53,15 +53,6 @@ def getformlation():
         di[i[0]], diCol[i[0]] = train(i[0])
     return(di, diCol)
 
-	#if methodId == 'distant':
-		#data={'lat':request.values.get('lat'), 'lng':request.values.get('lng')}
-		#url=("https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins={},{}&destinations=53.3393%2C-6.267%7C&key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ".format(str(data['lat']),str(data['lng'])))
-		#r=requests.get(url)
-		#distant = json.dumps(r.json())
-		#return(distant)
-
-
-
 
 @app.route('/', methods=['get'])
 def index():
@@ -119,8 +110,7 @@ def stationDetail(stationNum=None):
 
 @app.route('/station/', methods=['post'])
 def stationDetail1():
-	methodId = request.values.get('Id')
-	PredictTime = request.values.get('PredictTime')
+	PredictTime = int(request.values.get('PredictTime'))
 	stationNum = request.values.get('stationNum')
 	cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
 	detailData = cur.fetchone()
@@ -130,7 +120,9 @@ def stationDetail1():
 	global diCol
 	global di
 	futTime = ((datetime.datetime.now() - weatherData[0]).total_seconds() / 60 ) + float(PredictTime)
+	print(futTime)
 	if (futTime > 180) :
+		print(180)
 		stationNum = int(stationNum)
 		try:
 			for i in diCol[stationNum]:
@@ -140,7 +132,7 @@ def stationDetail1():
 			diCol_pr['pre_available_bikes'] = detailData[-1]
 			di['pre_minute'] = detailData[0].hour * 60 + detailData[0].minute
 
-			diCol_pr['month'] = datetime.datetime.now().month + (datetime.datetime.now().day + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24) // 30
+			diCol_pr['month'] = datetime.datetime.now().month + (datetime.datetime.now().day + (datetime.datetime.now().hour + PredictTime // 60) // 24) // 30
 			diCol_pr['day'] = datetime.datetime.now().day + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24
 			diCol_pr['hour'] = datetime.datetime.now().hour + PredictTime // 60
 			diCol_pr['minute'] = datetime.datetime.now().minute + datetime.datetime.now().hour * 60 + PredictTime 
@@ -169,18 +161,19 @@ def stationDetail1():
 				rfc_predictions = "A new weather may appear, not enough data to make a prediction."
 				return json.dumps({'rfc_predictions':rfc_predictions})
 		except Exception as e:
-			rfc_predictions = "We rebuild the prediction module, please try 10 minutes late. {}".format(e) 
+			rfc_predictions = "We rebuild the prediction module, please try 10 minutes late."
 			return json.dumps({'rfc_predictions':rfc_predictions})
 	else :
+		print(0)
 		stationNum = int(stationNum)
 		try:
 			for i in diCol[stationNum]:
 				diCol_pr[i] = 0
-
+			print(diCol_pr)
 			diCol_pr['pre_available_bikes'] = detailData[-1]
 			di['pre_minute'] = detailData[0].hour * 60 + detailData[0].minute
 
-			diCol_pr['month'] = datetime.datetime.now().month + (datetime.datetime.now().day + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24) // 30
+			diCol_pr['month'] = datetime.datetime.now().month + (datetime.datetime.now().day  + (datetime.datetime.now().hour + PredictTime // 60) // 24) // 30
 			diCol_pr['day'] = datetime.datetime.now().day + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24
 			diCol_pr['hour'] = datetime.datetime.now().hour + PredictTime // 60
 			diCol_pr['minute'] = datetime.datetime.now().minute + datetime.datetime.now().hour * 60 +  PredictTime 
@@ -211,9 +204,9 @@ def stationDetail1():
 				rfc_predictions = "A new weather may appear, not enough data to make a prediction."
 				return json.dumps({'rfc_predictions':rfc_predictions})
 		except Exception as e:
-		    rfc_predictions = "We rebuild the prediction module, please try 10 minutes late. {}".format(e) 
-		    return json.dumps({'rfc_predictions':rfc_predictions})
-
+			print(e)
+			rfc_predictions = "We rebuild the prediction module, please try 10 minutes late."
+			return json.dumps({'rfc_predictions':rfc_predictions})
 
 with app.test_request_context():
 	print(url_for('communicate'))

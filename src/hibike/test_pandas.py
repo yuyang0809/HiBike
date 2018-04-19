@@ -6,13 +6,10 @@ __license__ = "mit"
 import mysql.connector
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from patsy import dmatrices
 from sklearn.cross_validation import train_test_split
 from sklearn import metrics
 from sklearn.cross_validation import cross_val_score
-from sklearn.tree import export_graphviz
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 
 
@@ -92,5 +89,5 @@ def train(i):
 	finally:
 		pass
 
-if __name__ == '__main__' :
-    train(1)
+#if __name__ == '__main__' :
+    #train(1)
