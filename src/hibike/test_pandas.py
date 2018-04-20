@@ -6,10 +6,6 @@ __license__ = "mit"
 import mysql.connector
 import pandas as pd
 import numpy as np
-from patsy import dmatrices
-from sklearn.cross_validation import train_test_split
-from sklearn import metrics
-from sklearn.cross_validation import cross_val_score
 from sklearn.ensemble import RandomForestClassifier
 
 
@@ -56,24 +52,14 @@ def train(i):
 		for column in df2.columns.values:
 			if column not in categorical_columns:
 				continuous_columns.append(column)
-		df2['minute'] = df2['last_update_y'].dt.minute + df2['last_update_y'].dt.hour * 60
-		df2['minute']
-		pre_minute = df2['minute'][:-1].tolist()
-		pre_minute.insert(0, df2['minute'][0])
-		df2['pre_minute'] = pre_minute
-		continuous_columns.append('pre_minute')
 		
 		df2['humidity'] = df2['humidity'].astype('float')
 		continuous_columns.pop(continuous_columns.index('last_update_y'))
 
-		pre_available_bikes = df2['available_bikes'][:-1].tolist()
-		pre_available_bikes.insert(0, df2['available_bikes'][0])
-		df2['pre_available_bikes'] = pre_available_bikes
-		continuous_columns.append('pre_available_bikes')
-
 		df_dummies_weather_main = pd.get_dummies(df2[['weather_main']])
 		df_dummies_weekday = pd.get_dummies(df2[['weekday']])
-		describe_columns = [x for x in continuous_columns if x not in ['available_bike_stands', 'bike_stands', 'available_bikes', 'visibility']]
+		
+		describe_columns = [x for x in continuous_columns if x not in ['available_bike_stands', 'bike_stands', 'available_bikes', 'visibility', 'day', 'month']]
 
 		X = pd.concat([df2[describe_columns], df_dummies_weather_main, df_dummies_weekday], axis =1)
 		y = df2.available_bikes
@@ -89,5 +75,5 @@ def train(i):
 	finally:
 		pass
 
-#if __name__ == '__main__' :
-    #train(1)
+if __name__ == '__main__' :
+    train(1)

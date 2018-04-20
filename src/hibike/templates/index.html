@@ -1,53 +1,69 @@
 {% extends 'layout.html' %}
 {% block head %}
-  <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ&libraries=places&callback=initmymap">
-  </script>
+<link href="https://fonts.googleapis.com/css?family=Philosopher" rel="stylesheet">
+<link href="{{url_for('static',filename='css/indexCss.css')}}" rel="stylesheet">
 {% endblock %}
 
 {% block body %}
-  <script> $SCRIPT_ROOT = {{ request.script_root|tojson|safe}}; </script>
+  <!-- banner -->
+  <div class="header">
+    <div class="logo">
+      <a href="#searchBar"><img src="{{url_for('static',filename='img/logo.bmp')}}" class="img-responsive" alt=""></a>
+    </div> 
+    <div class="video"><video autoplay muted loop src="{{url_for('static',filename='video.mp4')}}"></video> 
+    </div>
+  </div>
+<div id="searchBar">
     <form class="searchForm" autocomplete="off">
-      <div class="1">
-        <select class="searchSelection">
+      <div class="searchSelection">
+        <select>
             <option name="searchOption" value="Station Name" selected>Station Name</option>
             <option name="searchOption" value="Station Number">Station Number</option>
             <option name="searchOption" value="Station Address">Station Address</option>
-            <option name="searchOption" value="Your address">Your Location</option>
+            <option name="searchOption" value="Your address">Input Address</option>
         </select> 
       </div>  
       
       <div class="2">
         <div id="searchContent">
           <input id="stationId" type="text" name="target" placeholder="Searching...">
-          <input id="searchSubmit" type="submit" value="Submit">
+<!--           <input id="searchSubmit" type="submit" value="Submit"> -->
+        <button id="searchSubmit" value="Submit">Submit</button>
         </div>
         <div id="match"></div>
       </div>
     </form>
-
+</div>
 
     <div class="mapInformation">
-          <div id="dublinmap"></div>
-          <div id="detail">
+          <div id="dublinmap">
+
+          </div>
+            <div id="detail">
               <div id="weather_image"></div>
               <div id="weather_description"></div>
               <div id='tempreature'></div>
-          </div>
+            </div>
     </div>
-
+    {% block footer %}
+    
+    {% endblock %}
      
 <script>
-    stationData={{stationData|tojson|safe}}
-    function initmymap(){
-    	// init map //
-    	var dbmap=new google.maps.LatLng(53.345842,-6.270120);
-      var map = new google.maps.Map(document.getElementById("dublinmap"),{
-        	center: dbmap,
-        	zoom:14,
-     	});
 
-    	var infoWindow = new google.maps.InfoWindow;
+    stationData={{stationData|tojson|safe}}
+
+    function initmymap(){
+      // init map //
+      var dbmap=new google.maps.LatLng(53.345842,-6.270120);
+      var map = new google.maps.Map(document.getElementById("dublinmap"),{
+          center: dbmap,
+          zoom:14,
+          // style the map. 
+          styles: [{"featureType":"administrative","elementType":"labels.text.fill","stylers":[{"color":"#6195a0"}]},{"featureType":"administrative.province","elementType":"geometry.stroke","stylers":[{"visibility":"off"}]},{"featureType":"landscape","elementType":"geometry","stylers":[{"lightness":"0"},{"saturation":"0"},{"color":"#f5f5f2"},{"gamma":"1"}]},{"featureType":"landscape.man_made","elementType":"all","stylers":[{"lightness":"-3"},{"gamma":"1.00"}]},{"featureType":"landscape.natural.terrain","elementType":"all","stylers":[{"visibility":"off"}]},{"featureType":"poi","elementType":"all","stylers":[{"visibility":"off"}]},{"featureType":"poi.park","elementType":"geometry.fill","stylers":[{"color":"#bae5ce"},{"visibility":"on"}]},{"featureType":"road","elementType":"all","stylers":[{"saturation":-100},{"lightness":45},{"visibility":"simplified"}]},{"featureType":"road.highway","elementType":"all","stylers":[{"visibility":"simplified"}]},{"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#fac9a9"},{"visibility":"simplified"}]},{"featureType":"road.highway","elementType":"labels.text","stylers":[{"color":"#4e4e4e"}]},{"featureType":"road.arterial","elementType":"labels.text.fill","stylers":[{"color":"#787878"}]},{"featureType":"road.arterial","elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"featureType":"transit","elementType":"all","stylers":[{"visibility":"simplified"}]},{"featureType":"transit.station.airport","elementType":"labels.icon","stylers":[{"hue":"#0a00ff"},{"saturation":"-77"},{"gamma":"0.57"},{"lightness":"0"}]},{"featureType":"transit.station.rail","elementType":"labels.text.fill","stylers":[{"color":"#43321e"}]},{"featureType":"transit.station.rail","elementType":"labels.icon","stylers":[{"hue":"#ff6c00"},{"lightness":"4"},{"gamma":"0.75"},{"saturation":"-68"}]},{"featureType":"water","elementType":"all","stylers":[{"color":"#eaf6f8"},{"visibility":"on"}]},{"featureType":"water","elementType":"geometry.fill","stylers":[{"color":"#c7eced"}]},{"featureType":"water","elementType":"labels.text.fill","stylers":[{"lightness":"-49"},{"saturation":"-53"},{"gamma":"0.79"}]}]
+          });
+
+      var infoWindow = new google.maps.InfoWindow;
 
       // Create the autocomplete object, restricting the search to geographical
       // location types.
@@ -56,21 +72,32 @@
         if(method=="Your address"){ 
           autocomplete = new google.maps.places.Autocomplete(
           /** @type {!HTMLInputElement} */
-          (document.getElementById('stationId')),
-          {types: ['geocode']});
-          
+            (document.getElementById('stationId')),
+            {types: ['geocode'],
+             componentRestrictions: { country: 'IE' }
+          });
           // When the user selects an address from the dropdown, populate the address
           // fields in the form.
-          autocomplete.addListener('place_changed', fillInAddress);
+          var autocompleteLsr = google.maps.event.addListener(autocomplete, 'place_changed', fillInAddress);
+
+        }
+        else {
+          try {
+            google.maps.event.removeListener(autocompleteLsr);
+            google.maps.event.clearInstanceListeners(autocomplete);
+            $(".pac-container").remove();
+          }
+          catch(err) {}
         }
       })
       
 
       stationData.forEach(function(element) {
-
+        var iconImg = "{{url_for('static',filename='icon/mark.png')}}";
         var station = new google.maps.LatLng(element[3], element[4]);
         var marker = new google.maps.Marker({
           position: station,
+          icon: iconImg,
           map: map
         });
 
@@ -107,13 +134,16 @@
 
             infoWindow.setContent(infowincontent);
             infoWindow.open(map, marker);
+          })
+          .fail(function() {
+            alert( "Connection fail, please refresh the website." );
           });
         });
       });
     }
 
     function showDetail(stationNum){
-    	window.location.href="/station/"+stationNum;
+      window.location.href="/station/"+stationNum;
     }
 
     $("#stationId").bind("input propertychange",function(){
@@ -135,7 +165,15 @@
         data_to_backend = {'Id':'searchForm','address':content}; 
         $.post("{{url_for('communicate')}}", data_to_backend, function(data){
           data=JSON.parse(data);
-          window.location.href="/station/"+data['station'];
+          if (data['station'] == null){
+            alert("Your input address is far away from station.")
+          }
+          else{
+            window.location.href="/station/"+data['station'];
+          }
+        })
+        .fail(function() {
+          alert( "Connection fail, please refresh the website." );
         });
       }else if(content != '')
       {
@@ -238,11 +276,15 @@
                     document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Thunderstorms.ico')}}'>"
                     break;
                 default:
-                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Moon.ico')}}'>"              
+                    document.getElementById("weather_image").innerHTML = "<img src='{{url_for('static',filename='icon/Moon.ico')}}'>"    
+
             }
-        document.getElementById("weather_description").innerHTML =description;
+        document.getElementById("weather_description").innerText =description;
         document.getElementById("tempreature").innerHTML = {{weatherData[1]|tojson|safe}}+"°F"; 
     };
 
+  </script>
+  <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA-IvyG8VIRCmxjbqpJoPJQvcVTW6NkKFQ&libraries=places&callback=initmymap">
   </script>
 {% endblock %}

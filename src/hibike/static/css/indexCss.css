@@ -1,0 +1,243 @@
+
+/*------header-------*/
+.header {
+  position: relative;
+  list-style: none;
+  overflow: hidden;
+  width: 100%;
+  height: 800px;
+  z-index: 1;
+
+}
+
+.logo {
+  position: absolute;
+  align-self: center;
+  margin-top: 8em;
+  margin-left: 36em;
+  z-index: 9999;
+  animation-name: logoam;
+  animation-duration: 4s;
+  animation-fill-mode: forwards;
+
+}
+
+@keyframes logoam {
+  from {opacity: 0.2; margin-top: 8em;}
+  to {opacity: 1; margin-top: 17em;}
+}
+
+.img-responsive{
+  align-self: center;
+  animation-name: logoam1;
+  animation-duration: 4s;
+  animation-fill-mode: forwards;
+  scale(1.5);
+}
+
+@keyframes logoam1 {
+  from { box-shadow: 0 0 5px #bbb;}
+  to { box-shadow: 0 0 10px white; }
+}
+
+.logo :hover{
+    transform: scale(1.1);
+}
+
+.video {
+position: relative;
+padding-bottom: 56.25%;
+overflow: hidden;
+height: 900px;
+}
+
+
+
+#info{
+  position: absolute;
+  margin-top: 20em;
+  margin-left: 30em;
+  border: 5px solid black;
+  width: 20%;
+  height: 8em;
+}
+
+/*-----Search Bar-----*/
+#searchBar {
+  position: absolute;
+  height: 70px;
+  width: 100%;
+  z-index: 999;
+  opacity: 0.8;
+  background-color:#5f5f5f;
+}
+
+.searchSelection{
+  float: left;
+  height: 100px;
+  width: 200px;
+  margin-left: 300px;
+}
+
+select{
+  text-decoration: none;
+  color: #333;
+  font-size: 14px;
+  height: 50px;
+  line-height: 24px;
+  display: block;
+  min-width: 80px;
+  position: relative;
+  margin-left: 65px;
+  margin-top: 10px;
+}
+
+select a:hover {
+  color: #fff;
+  background: #35ACC1;
+}
+
+
+#searchContent{
+  float: left;
+  margin-left: 10px;
+  margin-top: 10px;
+}
+
+#stationId{
+  float: left;
+  height: 45px;
+  width: 300px;
+  border-radius: 5px;
+}
+
+
+#match {
+  position: absolute;
+  top: 60px;
+  left: 630px;
+  z-index: 1000;
+  background: #F2F2F2;
+  max-height: 300px;
+  max-width: 200px;
+  overflow: hidden;
+  border: 1px solid #EEE4D8;
+  border-top-color: transparent;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+
+}
+
+#match a {
+  text-decoration: none;
+  color: #333;
+  font-size: 14px;
+  width: 100%;
+  height: 24px;
+  line-height: 24px;
+  display: block;
+  min-width: 80px;
+  position: relative;
+
+}
+
+#match a:hover {
+  color: #fff;
+  background: #35ACC1;
+}
+
+
+/*---------weather info------------*/
+.mapInformation {
+  position: relative;
+  list-style: none;
+  overflow: hidden;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  margin-top: 70px;
+
+}
+#dublinmap { 
+  height: 640px;
+  width: 100%;
+  float: left;
+  z-index: 1;
+}
+
+#detail {
+  position: absolute;
+  height: 230px;
+  width: 180px;
+  background-color: #6bbaa7;
+  color: white; 
+  opacity:0.75;
+  z-index: 9999;
+  top: 100px;
+}
+
+#weather_image{
+  margin-left: 20px;
+}
+
+#weather_description{
+/*  background-color: #b56357;*/
+    height: 40px;
+    font-size: 30px;
+    font-family: 'Philosopher', sans-serif;
+    padding-left: 40px;
+}
+
+#tempreature{
+/*    background-color: #b56357;*/
+    height: 50px;
+    font-family: "HelveticaNeue";
+    padding-left: 50px;
+
+}
+
+/*----------------------------*/
+#searchSubmit{
+  background:#fba100;
+  color:#fff;
+  border:none;
+  position:relative;
+  height:45px;
+  width: 120px;
+  font-size:1em;
+  padding:0 2em;
+  cursor:pointer;
+  transition:800ms ease all;
+  outline:none;
+  border-radius:10px;
+  margin-left: 10px;
+}
+#searchSubmit:hover{
+  background:#fff;
+  color:#1AAB8A;
+}
+#searchSubmit:before,#searchSubmit:after{
+  content:'';
+  position:absolute;
+  top:0;
+  right:0;
+  height:2px;
+  width:0;
+  background: #1AAB8A;
+  transition:400ms ease all;
+}
+#searchSubmit:after{
+  right:inherit;
+  top:inherit;
+  left:0;
+  bottom:0;
+}
+#searchSubmit:hover:before,#searchSubmit:hover:after{
+  width:100%;
+  transition:800ms ease all;
+}
+
+
+
+
+

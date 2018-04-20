@@ -16,6 +16,11 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
+from test_pandas import train
+
+import threading as thd
+import time
+
 rds_host='mybike.c0jxuz6r8olg.us-west-2.rds.amazonaws.com'
 name='hibike'
 pwd='zx123456'
@@ -23,28 +28,33 @@ db_name='bike'
 port=3306
 
 app = Flask(__name__)
-conn = mysql.connector.connect(host=rds_host,user=name, password=pwd, database=db_name)
-cur = conn.cursor()
 
-cur.execute("select * from Bike_Stations")
-stationData = cur.fetchall()
-cur.execute('select weather_main,temp from weather ORDER BY last_update DESC limit 0, 1')
-weatherData = cur.fetchone()
+try:
+	conn = mysql.connector.connect(host=rds_host,user=name, password=pwd, database=db_name)
+	cur = conn.cursor()
+
+	cur.execute("select * from Bike_Stations")
+	stationData = cur.fetchall()
+	cur.execute('select weather_main,temp from weather ORDER BY last_update DESC limit 0, 1')
+	weatherData = cur.fetchone()
+except:
+	t = thd.Thread(target=renewdict, name='renewThread')
+	t.start()
+	app.run(debug=True)
 
 
-from test_pandas import train
-
-import threading as thd
-import time
 di={}
 diCol = {}
 def renewdict():
-    global di
-    global diCol
-    print('work')
-    di, diCol = getformlation()
-    print('done')
-    thd.Timer(86400,renewdict).start()
+	try:
+		global di
+		global diCol
+		print('work')
+		di, diCol = getformlation()
+		print('done')
+		thd.Timer(86400,renewdict).start()
+	except:
+		renewdict()
 
 def getformlation():
     di = {}
@@ -62,17 +72,29 @@ def index():
 def communicate():
 	methodId = request.values.get('Id')
 	if methodId == '1':
-		stationNum = request.values.get('stationNum')
-		cur.execute('select available_bike_stands, available_bikes from station_'+stationNum+' ORDER BY last_update DESC limit 0, 1')
-		data = cur.fetchone()
-		dynamicData = {'available_bike_stands':data[0], 'available_bikes':data[1]}
+		try:
+			stationNum = request.values.get('stationNum')
+			cur.execute('select available_bike_stands, available_bikes from station_'+stationNum+' ORDER BY last_update DESC limit 0, 1')
+			data = cur.fetchone()
+			dynamicData = {'available_bike_stands':data[0], 'available_bikes':data[1]}
+		except:
+			t = thd.Thread(target=renewdict, name='renewThread')
+			t.start()
+			app.run(debug=True)
+
 		dynamicData = json.dumps(dynamicData)
 		return dynamicData
 	elif methodId == '2':
 		stationNum = request.values.get('stationNum')
-		cur.execute('select * from station_'+stationNum+' ORDER BY last_update DESC limit 0, 1')
-		detailData = cur.fetchone()
-		detailData = {'last_update':detailData[0].timestamp(), 'banking':detailData[1], 'bonus':detailData[2], 'status':detailData[3], 'bike_stands':detailData[4], 'weather':detailData[5], 'temperature':detailData[6]}
+		try:
+			cur.execute('select * from station_'+stationNum+' ORDER BY last_update DESC limit 0, 1')
+			detailData = cur.fetchone()
+			detailData = {'last_update':detailData[0].timestamp(), 'banking':detailData[1], 'bonus':detailData[2], 'status':detailData[3], 'bike_stands':detailData[4], 'weather':detailData[5], 'temperature':detailData[6]}
+		except:
+			t = thd.Thread(target=renewdict, name='renewThread')
+			t.start()
+			app.run(debug=True)
+
 		detailData = json.dumps(detailData)
 		return detailData
 	elif methodId == 'searchForm':
@@ -98,48 +120,53 @@ def communicate():
 	
 @app.route('/station/<stationNum>', methods=['get'])
 def stationDetail(stationNum=None):
-    cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
-    detailData = cur.fetchone()
-    cur.execute("select concat(hour(last_update),':00') as time,available_bike_stands,available_bikes from station_"+str(stationNum)+' WHERE last_update >=  NOW() - interval 1 day  GROUP BY floor(hour(last_update))  ORDER BY last_update ASC;')
-    alldata = cur.fetchall()
-    cur.execute("select * from Bike_Stations where Number = {}".format(stationNum))
-    stationDetail = cur.fetchall()
-    return render_template('stationDetail.html', stationNum=stationNum, detailData=detailData, stationDetail=stationDetail, alldata=alldata, stationData=stationData, weatherData=weatherData)
-
+	try:
+	    cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
+	    detailData = cur.fetchone()
+	    cur.execute("select concat(hour(last_update),':00') as time,available_bike_stands,available_bikes from station_"+str(stationNum)+' WHERE last_update >=  NOW() - interval 1 day  GROUP BY floor(hour(last_update))  ORDER BY last_update ASC;')
+	    alldata = cur.fetchall()
+	    cur.execute("select * from Bike_Stations where Number = {}".format(stationNum))
+	    stationDetail = cur.fetchall()
+	    return render_template('stationDetail.html', stationNum=stationNum, detailData=detailData, stationDetail=stationDetail, alldata=alldata, stationData=stationData, weatherData=weatherData)
+	except:
+		t = thd.Thread(target=renewdict, name='renewThread')
+		t.start()
+		app.run(debug=True)
 
 
 @app.route('/station/', methods=['post'])
 def stationDetail1():
-	PredictTime = int(request.values.get('PredictTime'))
+	PredictTime = request.values.get('PredictTime')
 	stationNum = request.values.get('stationNum')
-	cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
-	detailData = cur.fetchone()
-	cur.execute('select * from weather ORDER BY last_update DESC limit 0, 1')
-	weatherData = cur.fetchone()
+	try:
+		cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
+		detailData = cur.fetchone()
+		cur.execute('select * from weather ORDER BY last_update DESC limit 0, 1')
+		weatherData = cur.fetchone()
+	except:
+		t = thd.Thread(target=renewdict, name='renewThread')
+		t.start()
+		app.run(debug=True)
+	
 	diCol_pr = {}
 	global diCol
 	global di
-	futTime = ((datetime.datetime.now() - weatherData[0]).total_seconds() / 60 ) + float(PredictTime)
-	print(futTime)
+	PredictTime = float(PredictTime)
+	futTime = ((datetime.datetime.now() - weatherData[0]).total_seconds() / 60 ) + PredictTime
 	if (futTime > 180) :
-		print(180)
 		stationNum = int(stationNum)
 		try:
 			for i in diCol[stationNum]:
 				diCol_pr[i] = 0
 			r_w = requests.get('http://api.openweathermap.org/data/2.5/forecast?q=Dublin,IE&APPID=7b3e054e55cf81602b4298ca04a0fa18')
 
-			diCol_pr['pre_available_bikes'] = detailData[-1]
-			di['pre_minute'] = detailData[0].hour * 60 + detailData[0].minute
-
-			diCol_pr['month'] = datetime.datetime.now().month + (datetime.datetime.now().day + (datetime.datetime.now().hour + PredictTime // 60) // 24) // 30
-			diCol_pr['day'] = datetime.datetime.now().day + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24
 			diCol_pr['hour'] = datetime.datetime.now().hour + PredictTime // 60
 			diCol_pr['minute'] = datetime.datetime.now().minute + datetime.datetime.now().hour * 60 + PredictTime 
 			diCol_pr['humidity'] = r_w.json()['list'][0]['main']['humidity']
 			diCol_pr['temp'] = r_w.json()['list'][0]['main']['temp']
 			diCol_pr['wind'] = r_w.json()['list'][0]['wind']['speed']
-			weekday = datetime.datetime.now().weekday() + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24
+			weekday = int(datetime.datetime.now().weekday() + (datetime.datetime.now().hour + (datetime.datetime.now().minute + PredictTime) // 60) // 24)
+
 			if weekday >= 7:
 				weekday = 0
 
@@ -164,25 +191,20 @@ def stationDetail1():
 			rfc_predictions = "We rebuild the prediction module, please try 10 minutes late."
 			return json.dumps({'rfc_predictions':rfc_predictions})
 	else :
-		print(0)
 		stationNum = int(stationNum)
 		try:
 			for i in diCol[stationNum]:
 				diCol_pr[i] = 0
-			print(diCol_pr)
-			diCol_pr['pre_available_bikes'] = detailData[-1]
-			di['pre_minute'] = detailData[0].hour * 60 + detailData[0].minute
 
-			diCol_pr['month'] = datetime.datetime.now().month + (datetime.datetime.now().day  + (datetime.datetime.now().hour + PredictTime // 60) // 24) // 30
-			diCol_pr['day'] = datetime.datetime.now().day + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24
-			diCol_pr['hour'] = datetime.datetime.now().hour + PredictTime // 60
-			diCol_pr['minute'] = datetime.datetime.now().minute + datetime.datetime.now().hour * 60 +  PredictTime 
+			diCol_pr['hour'] = datetime.datetime.now().hour + (datetime.datetime.now().minute + PredictTime) // 60
+			diCol_pr['minute'] = (datetime.datetime.now().minute + PredictTime) % 60
 
 			diCol_pr['humidity'] = float(weatherData[2])
 			diCol_pr['temp'] = weatherData[3]
 			diCol_pr['wind'] = weatherData[5]
 
-			weekday = datetime.datetime.now().weekday() + PredictTime + (datetime.datetime.now().hour + PredictTime // 60) // 24
+			weekday = int(datetime.datetime.now().weekday() + (datetime.datetime.now().hour + (datetime.datetime.now().minute + PredictTime) // 60) // 24)
+
 			if weekday >= 7:
 				weekday = 0
 			weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -204,7 +226,6 @@ def stationDetail1():
 				rfc_predictions = "A new weather may appear, not enough data to make a prediction."
 				return json.dumps({'rfc_predictions':rfc_predictions})
 		except Exception as e:
-			print(e)
 			rfc_predictions = "We rebuild the prediction module, please try 10 minutes late."
 			return json.dumps({'rfc_predictions':rfc_predictions})
 

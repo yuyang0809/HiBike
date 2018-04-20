@@ -1,0 +1,217 @@
+#searchBar {
+  position: absolute;
+  background-color: #6bbaa7; 
+  height: 70px;
+  width: 100%;
+  z-index: 999;
+  opacity:0.9;
+}
+
+.searchSelection{
+  float: left;
+  height: 100px;
+  width: 200px;
+  margin-left: 300px;
+}
+
+select{
+  text-decoration: none;
+  color: #333;
+  font-size: 14px;
+  height: 50px;
+  line-height: 24px;
+  display: block;
+  min-width: 80px;
+  position: relative;
+  margin-left: 65px;
+  margin-top: 10px;
+}
+
+select a:hover {
+  color: #fff;
+  background: #35ACC1;
+}
+
+
+#searchContent{
+  float: left;
+  margin-left: 10px;
+  margin-top: 10px;
+}
+
+#stationId{
+  float: left;
+  height: 45px;
+  width: 300px;
+  border-radius: 5px;
+}
+
+/*----------------------------*/
+#searchSubmit{
+  background:#fba100;
+  color:#fff;
+  border:none;
+  position:relative;
+  height:45px;
+  width: 120px;
+  font-size:1em;
+  padding:1 2em;
+  cursor:pointer;
+  transition:800ms ease all;
+  outline:none;
+  border-radius:10px;
+  margin-left: 10px;
+  margin-top: 3px;
+}
+#searchSubmit:hover{
+  background:#fff;
+  color:#1AAB8A;
+}
+#searchSubmit:before,#searchSubmit:after{
+  content:'';
+  position:absolute;
+  top:0;
+  right:0;
+  height:2px;
+  width:0;
+  background: #1AAB8A;
+  transition:400ms ease all;
+}
+#searchSubmit:after{
+  right:inherit;
+  top:inherit;
+  left:0;
+  bottom:0;
+}
+#searchSubmit:hover:before,#searchSubmit:hover:after{
+  width:100%;
+  transition:800ms ease all;
+}
+
+/*-------------------*/
+#match {
+  position: absolute;
+  top: 75px;
+  left: 540px;
+  z-index: 1000;
+  background: #F2F2F2;
+  max-height: 300px;
+  overflow: hidden;
+  border: 1px solid #EEE4D8;
+  border-top-color: transparent;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+
+}
+
+#match a {
+  text-decoration: none;
+  color: #333;
+  font-size: 14px;
+  width: 100%;
+  height: 24px;
+  line-height: 24px;
+  display: block;
+  min-width: 80px;
+  position: relative;
+
+}
+
+#match a:hover {
+  color: #fff;
+  background: #35ACC1;
+}
+
+
+/*---------map & weather info------------*/
+.mapInformation {
+  position: relative;
+  list-style: none;
+  overflow: hidden;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+#dublinmap { 
+  height: 640px;
+  width: 100%;
+  top: 70px;
+  float: left;
+/*  z-index: -1;*/
+}
+
+#detail {
+  position: absolute;
+  height: 230px;
+  width: 180px;
+  background-color: #6bbaa7;
+  color: white; 
+  opacity:0.75;
+  z-index: 9999;
+  top: 200px;
+}
+
+#weather_image{
+  margin-left: 20px;
+}
+
+#weather_description{
+/*  background-color: #b56357;*/
+    height: 40px;
+    font-size: 30px;
+    font-family: 'Philosopher', sans-serif;
+    padding-left: 40px;
+}
+
+#tempreature{
+/*    background-color: #b56357;*/
+    height: 50px;
+    font-family: "HelveticaNeue";
+    padding-left: 50px;
+
+}
+
+/*--------------prediction info---------------*/
+#predictInfo{
+  height: 400px;
+  width: 100%;
+  background-color: white;
+}
+
+#curve_chart{
+  width: 40%;
+  float: left;
+  margin-left: 8%;
+}
+#predictResults{
+  background-color: white;
+  height: 400px;
+  width: 36%;
+  float: right;
+  margin-right: 14%;
+}
+.PredictForm{
+/*  padding: 30px;
+  position: absolute;*/
+
+}
+.PredictForm p{
+  font-family: 'Philosopher', sans-serif;
+  font-size: 30px;
+}
+
+#PredictTime{
+  float: left;
+  margin-left: 10px;
+  margin-top: 10px;
+  height: 50px;
+}
+/*##predictAnswer{
+  background-color: #6bbaa7;
+  height: 200px;
+  width: 36%;
+  float: right;
+}*/
+#PredictSubmit{
+  height: 40px;
+}
