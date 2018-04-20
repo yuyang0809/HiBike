@@ -4,10 +4,12 @@
   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
   <link href="{{url_for('static',filename='css/stationCss.css')}}" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Philosopher" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Bitter" rel="stylesheet">
 {% endblock %}
 
 {% block body %}
 <div id="searchBar">
+  <div id='logoreturn'><a href="/"><img src="{{url_for('static',filename='img/logo.bmp')}}" class="img-responsive" alt=""></a></div>
     <form class="searchForm" autocomplete="off">
       <div class="searchSelection">
         <select>
@@ -49,8 +51,8 @@
         </form>
             <div id="predictAnswer">
                 <p id="time"></p>
-                <p id='bikenow'>Available_bikes now:{{detailData[4]|tojson|safe}}</p>
-                <p id='bikefut'>Available_bikes future:</p>
+                <p id='bikenow'>All stands: {{detailData[3]|tojson|safe}}; &nbsp &nbsp Available_bikes:{{detailData[4]|tojson|safe}}</p>
+                <p id='bikefut'></p>
             </div> 
     </div> 
   </div>
@@ -314,7 +316,7 @@
       data_to_backend = {'Id':'PredictForm','PredictTime':PredictTime,'stationNum':{{stationNum}}}; 
       $.post("{{url_for('stationDetail1')}}", data_to_backend, function(data){
         data=JSON.parse(data); 
-        document.getElementById('bikefut').innerHTML = data['rfc_predictions'];
+        document.getElementById('bikefut').innerHTML = 'Prediction: ' + data['rfc_predictions'];
       })
       .fail(function() {
         alert( "Connection fail, please refresh the website." );

@@ -29,26 +29,25 @@ port=3306
 
 app = Flask(__name__)
 
-try:
-	conn = mysql.connector.connect(host=rds_host,user=name, password=pwd, database=db_name)
-	cur = conn.cursor()
+conn = mysql.connector.connect(host=rds_host,user=name, password=pwd, database=db_name)
+cur = conn.cursor()
 
-	cur.execute("select * from Bike_Stations")
-	stationData = cur.fetchall()
-	cur.execute('select weather_main,temp from weather ORDER BY last_update DESC limit 0, 1')
-	weatherData = cur.fetchone()
-except:
-	t = thd.Thread(target=renewdict, name='renewThread')
-	t.start()
-	app.run(debug=True)
+cur.execute("select * from Bike_Stations")
+stationData = cur.fetchall()
+cur.execute('select weather_main,temp from weather ORDER BY last_update DESC limit 0, 1')
+weatherData = cur.fetchone()
+
 
 
 di={}
 diCol = {}
+status = 'false'
 def renewdict():
 	try:
 		global di
 		global diCol
+		global status
+		status = 'true'
 		print('work')
 		di, diCol = getformlation()
 		print('done')
@@ -72,29 +71,17 @@ def index():
 def communicate():
 	methodId = request.values.get('Id')
 	if methodId == '1':
-		try:
-			stationNum = request.values.get('stationNum')
-			cur.execute('select available_bike_stands, available_bikes from station_'+stationNum+' ORDER BY last_update DESC limit 0, 1')
-			data = cur.fetchone()
-			dynamicData = {'available_bike_stands':data[0], 'available_bikes':data[1]}
-		except:
-			t = thd.Thread(target=renewdict, name='renewThread')
-			t.start()
-			app.run(debug=True)
-
+		stationNum = request.values.get('stationNum')
+		cur.execute('select available_bike_stands, available_bikes from station_'+stationNum+' ORDER BY last_update DESC limit 0, 1')
+		data = cur.fetchone()
+		dynamicData = {'available_bike_stands':data[0], 'available_bikes':data[1]}
 		dynamicData = json.dumps(dynamicData)
 		return dynamicData
 	elif methodId == '2':
 		stationNum = request.values.get('stationNum')
-		try:
-			cur.execute('select * from station_'+stationNum+' ORDER BY last_update DESC limit 0, 1')
-			detailData = cur.fetchone()
-			detailData = {'last_update':detailData[0].timestamp(), 'banking':detailData[1], 'bonus':detailData[2], 'status':detailData[3], 'bike_stands':detailData[4], 'weather':detailData[5], 'temperature':detailData[6]}
-		except:
-			t = thd.Thread(target=renewdict, name='renewThread')
-			t.start()
-			app.run(debug=True)
-
+		cur.execute('select * from station_'+stationNum+' ORDER BY last_update DESC limit 0, 1')
+		detailData = cur.fetchone()
+		detailData = {'last_update':detailData[0].timestamp(), 'banking':detailData[1], 'bonus':detailData[2], 'status':detailData[3], 'bike_stands':detailData[4], 'weather':detailData[5], 'temperature':detailData[6]}
 		detailData = json.dumps(detailData)
 		return detailData
 	elif methodId == 'searchForm':
@@ -120,34 +107,25 @@ def communicate():
 	
 @app.route('/station/<stationNum>', methods=['get'])
 def stationDetail(stationNum=None):
-	try:
-	    cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
-	    detailData = cur.fetchone()
-	    cur.execute("select concat(hour(last_update),':00') as time,available_bike_stands,available_bikes from station_"+str(stationNum)+' WHERE last_update >=  NOW() - interval 1 day  GROUP BY floor(hour(last_update))  ORDER BY last_update ASC;')
-	    alldata = cur.fetchall()
-	    cur.execute("select * from Bike_Stations where Number = {}".format(stationNum))
-	    stationDetail = cur.fetchall()
-	    return render_template('stationDetail.html', stationNum=stationNum, detailData=detailData, stationDetail=stationDetail, alldata=alldata, stationData=stationData, weatherData=weatherData)
-	except:
-		t = thd.Thread(target=renewdict, name='renewThread')
-		t.start()
-		app.run(debug=True)
+    cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
+    detailData = cur.fetchone()
+    cur.execute("select concat(hour(last_update),':00') as time,available_bike_stands,available_bikes from station_"+str(stationNum)+' WHERE last_update >=  NOW() - interval 1 day  GROUP BY floor(hour(last_update))  ORDER BY last_update ASC;')
+    alldata = cur.fetchall()
+    cur.execute("select * from Bike_Stations where Number = {}".format(stationNum))
+    stationDetail = cur.fetchall()
+    return render_template('stationDetail.html', stationNum=stationNum, detailData=detailData, stationDetail=stationDetail, alldata=alldata, stationData=stationData, weatherData=weatherData)
+
 
 
 @app.route('/station/', methods=['post'])
 def stationDetail1():
 	PredictTime = request.values.get('PredictTime')
 	stationNum = request.values.get('stationNum')
-	try:
-		cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
-		detailData = cur.fetchone()
-		cur.execute('select * from weather ORDER BY last_update DESC limit 0, 1')
-		weatherData = cur.fetchone()
-	except:
-		t = thd.Thread(target=renewdict, name='renewThread')
-		t.start()
-		app.run(debug=True)
-	
+	cur.execute('select * from station_'+str(stationNum)+' ORDER BY last_update DESC limit 0, 1')
+	detailData = cur.fetchone()
+	cur.execute('select * from weather ORDER BY last_update DESC limit 0, 1')
+	weatherData = cur.fetchone()
+
 	diCol_pr = {}
 	global diCol
 	global di
@@ -190,6 +168,9 @@ def stationDetail1():
 		except Exception as e:
 			rfc_predictions = "We rebuild the prediction module, please try 10 minutes late."
 			return json.dumps({'rfc_predictions':rfc_predictions})
+		finally:
+			if (status == 'false'):
+				renewdict()
 	else :
 		stationNum = int(stationNum)
 		try:
@@ -228,6 +209,9 @@ def stationDetail1():
 		except Exception as e:
 			rfc_predictions = "We rebuild the prediction module, please try 10 minutes late."
 			return json.dumps({'rfc_predictions':rfc_predictions})
+		finally:
+			if (status == 'false'):
+				renewdict()
 
 with app.test_request_context():
 	print(url_for('communicate'))
@@ -236,5 +220,5 @@ with app.test_request_context():
 if __name__ == '__main__' :
 	t = thd.Thread(target=renewdict, name='renewThread')
 	t.start()
-	app.run(debug=True)
+	app.run(host='0.0.0.0', debug=True)
     

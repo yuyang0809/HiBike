@@ -65,7 +65,7 @@ height: 900px;
 /*-----Search Bar-----*/
 #searchBar {
   position: absolute;
-  height: 70px;
+  height: 60px;
   width: 100%;
   z-index: 999;
   opacity: 0.8;
@@ -83,7 +83,7 @@ select{
   text-decoration: none;
   color: #333;
   font-size: 14px;
-  height: 50px;
+  height: 40px;
   line-height: 24px;
   display: block;
   min-width: 80px;
@@ -99,14 +99,15 @@ select a:hover {
 
 
 #searchContent{
+  height:35px;
   float: left;
-  margin-left: 10px;
-  margin-top: 10px;
+  margin-left: 6px;
+  margin-top:0.6%;
 }
 
 #stationId{
   float: left;
-  height: 45px;
+  height: 35px;
   width: 300px;
   border-radius: 5px;
 }
@@ -155,7 +156,7 @@ select a:hover {
   width: 100%;
   padding: 0;
   margin: 0;
-  margin-top: 70px;
+  margin-top: 60px;
 
 }
 #dublinmap { 
@@ -202,7 +203,7 @@ select a:hover {
   color:#fff;
   border:none;
   position:relative;
-  height:45px;
+  height:40px;
   width: 120px;
   font-size:1em;
   padding:0 2em;

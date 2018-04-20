@@ -1,7 +1,20 @@
+#logoreturn
+{
+    float:left;
+    top:0px;
+    height: 60px;
+    width:20%;
+    margin:0;
+}
+
+.img-responsive
+{
+    height:60px;
+}
 #searchBar {
   position: absolute;
   background-color: #6bbaa7; 
-  height: 70px;
+  height: 60px;
   width: 100%;
   z-index: 999;
   opacity:0.9;
@@ -11,14 +24,14 @@
   float: left;
   height: 100px;
   width: 200px;
-  margin-left: 300px;
+  margin-left: 6%;
 }
 
 select{
   text-decoration: none;
   color: #333;
   font-size: 14px;
-  height: 50px;
+  height: 40px;
   line-height: 24px;
   display: block;
   min-width: 80px;
@@ -34,14 +47,15 @@ select a:hover {
 
 
 #searchContent{
+  height:35px;
   float: left;
-  margin-left: 10px;
-  margin-top: 10px;
+  margin-left: 6px;
+  margin-top:0.6%;
 }
 
 #stationId{
   float: left;
-  height: 45px;
+  height: 35px;
   width: 300px;
   border-radius: 5px;
 }
@@ -52,7 +66,7 @@ select a:hover {
   color:#fff;
   border:none;
   position:relative;
-  height:45px;
+  height:40px;
   width: 120px;
   font-size:1em;
   padding:1 2em;
@@ -135,7 +149,7 @@ select a:hover {
 #dublinmap { 
   height: 640px;
   width: 100%;
-  top: 70px;
+  top: 60px;
   float: left;
 /*  z-index: -1;*/
 }
@@ -181,37 +195,58 @@ select a:hover {
 #curve_chart{
   width: 40%;
   float: left;
-  margin-left: 8%;
+  margin-left: 3%;
 }
 #predictResults{
+  margin-top:5%;
   background-color: white;
-  height: 400px;
+  height: 200px;
   width: 36%;
   float: right;
-  margin-right: 14%;
+  margin-right: 6%;
 }
 .PredictForm{
 /*  padding: 30px;
   position: absolute;*/
+  width:100%;
+    
 
 }
 .PredictForm p{
-  font-family: 'Philosopher', sans-serif;
+  font-family: 'Bitter', serif;
   font-size: 30px;
 }
 
 #PredictTime{
+  border-radius:3px;    
   float: left;
   margin-left: 10px;
   margin-top: 10px;
-  height: 50px;
+  height: 30px;
+  width:100px;
+  
 }
-/*##predictAnswer{
-  background-color: #6bbaa7;
-  height: 200px;
-  width: 36%;
-  float: right;
-}*/
+
 #PredictSubmit{
-  height: 40px;
+    margin-left: 10px;
+    margin-top: 10px;
+    padding:10px 25px; 
+    background-color: #6bbaa7;
+    color:white;
+    font-size: 14px;
+    border:0 none;
+    cursor:pointer;
+    border-radius: 5px;
+    border-radius: 5px;
+}
+#bikenow
+{
+    font-size: 20px;
+    font-family: 'Bitter', serif;
+}
+
+#bikefut
+{
+    font-size: 20px;
+    font-family: 'Bitter', serif;
 }
